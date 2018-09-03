@@ -32,6 +32,7 @@ from .utilities import toString
 from .utilities import check_chrom_str_bytes
 from .lib import MatrixFileHandler
 
+
 class hiCMatrix:
     """
     Class to handle Hi-C matrices
@@ -39,7 +40,7 @@ class hiCMatrix:
     get sub matrices by chrname.
     """
 
-    def __init__(self, pMatrixFile=None, pChrnameList=None, pCooler_only_init=None,
+    def __init__(self, pMatrixFile=None, pChrnameList=None,
                  pApplyCorrectionCooler=None):
         self.non_homogeneous_warning_already_printed = False
         self.bin_size = None
@@ -62,21 +63,20 @@ class hiCMatrix:
             fileType = 'cool'
             if pMatrixFile.endswith('.h5'):
                 fileType = 'h5'
-            self.matrixFileHandler = MatrixFileHandler(pFileType=fileType, pMatrixFile=pMatrixFile, pChrnameList=pChrnameList, pCooler_only_init=pCooler_only_init,
+            self.matrixFileHandler = MatrixFileHandler(pFileType=fileType, pMatrixFile=pMatrixFile, pChrnameList=pChrnameList,
                                                        pApplyCorrectionCooler=pApplyCorrectionCooler)
             self.matrix, self.cut_intervals, self.nan_bins, \
                 self.correction_factors, self.distance_counts = self.matrixFileHandler.load()
 
             if self.nan_bins is None:
                 self.nan_bins = np.array([])
-            
+
             self.fillLowerTriangle()
 
             self.restoreMaskedBins()
             self.interval_trees, self.chrBinBoundaries = \
                 self.intervalListToIntervalTree(self.cut_intervals)
-        elif pCooler_only_init:
-            self.matrixFileHandler = MatrixFileHandler()
+
         elif pMatrixFile is None:
 
             log.info('Only init object, no matrix given.')

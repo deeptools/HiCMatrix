@@ -99,7 +99,7 @@ install_requires_py = ["numpy == 1.13.*",
                        "pandas == 0.20.*",
                        "future == 0.16.*",
                        "cooler == 0.7.*",
-                        "intervaltree == 2.1.*"
+                       "intervaltree == 2.1.*"
                        ]
 
 if sys.version_info[0] == 2:
@@ -111,18 +111,12 @@ setup(
     author='Fidel Ramirez, Vivek Bhardwaj, Björn Grüning, Joachim Wolff',
     author_email='deeptools@googlegroups.com',
     packages=find_packages(),
-    # scripts=['bin/findRestSite', 'bin/hicAggregateContacts', 'bin/hicBuildMatrix', 'bin/hicCorrectMatrix',
-    #          'bin/hicCorrelate', 'bin/hicFindEnrichedContacts', 'bin/hicFindTADs',
-    #          'bin/hicMergeMatrixBins', 'bin/hicPlotMatrix', 'bin/hicPlotDistVsCounts',
-    #          'bin/hicPlotTADs', 'bin/hicSumMatrices', 'bin/hicExport', 'bin/hicInfo', 'bin/hicexplorer',
-    #          'bin/hicQC', 'bin/hicCompareMatrices', 'bin/hicPCA', 'bin/hicTransform', 'bin/hicPlotViewpoint',
-    #          'bin/hicLog2Ratio', 'bin/hicConvertFormat'],
+
     include_package_data=True,
     package_dir={'hicmatrix': 'hicmatrix'},
-    # package_data={'hicexplorer': ['qc_template.html']},
-    url='http://hicexplorer.readthedocs.io',
+    url='https://github.com/deeptools/HiCMatrix',
     license='LICENSE.txt',
-    description='Helper package which implements HiCMatrix class which is needed from HiCExplorer and pyGenomeTracks',
+    description='Helper package which implements HiCMatrix class for HiCExplorer and pyGenomeTracks',
     long_description=open('README.rst').read(),
     classifiers=[
         'Intended Audience :: Science/Research',
