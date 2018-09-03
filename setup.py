@@ -93,17 +93,14 @@ class install(_install):
             sys.stderr.write("Error: {}".format(e))
 
 
-install_requires_py = ["numpy == 1.13.*",
-                       "scipy == 1.0.*",
-                       "tables == 3.3.*",
-                       "pandas == 0.20.*",
-                       "future == 0.16.*",
-                       "cooler == 0.7.*",
+install_requires_py = ["numpy >= 1.13.*",
+                       "scipy >= 1.1.*",
+                       "tables >= 3.4.*",
+                       "pandas >= 0.23.*",
+                       "future >= 0.16.*",
+                       "cooler == 0.7.11",
                        "intervaltree == 2.1.*"
                        ]
-
-if sys.version_info[0] == 2:
-    install_requires_py.append("configparser == 3.5.*")
 
 setup(
     name='HiCMatrix',
