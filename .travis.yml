@@ -13,7 +13,7 @@ stages:
 
 # Setup anaconda
 before_install:
-  - export HIC_TEST_DATA_DIR="`pwd`/hicexplorer/test/test_data/"
+  - export HIC_TEST_DATA_DIR="`pwd`/hicmatrix/test/test_data/"
   - echo $HIC_TEST_DATA_DIR
   - if [[ "$TRAVIS_OS_NAME" == "linux" && "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then curl https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -o miniconda.sh ; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" && "$TRAVIS_PYTHON_VERSION" == "3.6" ]]; then curl https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -o miniconda.sh ; fi
@@ -37,5 +37,5 @@ install:
 # command to run tests
 script:
   - flake8 . --exclude=.venv,.build,planemo_test_env,build --ignore=E501,F401,F403,E402,F999,F405,E712
-  - py.test hicexplorer/test/ --doctest-modules --capture=sys
-  - py.test hicexplorer --doctest-modules --ignore=hicexplorer/test/
+  - py.test hicmatrix/test/ --doctest-modules --capture=sys
+  - py.test hicmatrix --doctest-modules --ignore=hicmatrix/test/
