@@ -87,17 +87,16 @@ def test_save_load_h5():
     nt.assert_equal(hic.cut_intervals, h5_obj.cut_intervals)
     unlink(outfile)
 
+
 @pytest.mark.xfail
 def test_save_load_other_formats_fail(capsys):
     pMatrixFile = ROOT + 'test_matrix.hicpro'
-    pBedFileHicPro = ROOT + 'test_matrix.bed'  # no parameter for this in hiCMatrix::__init__() anyway
-    hic_matrix = hm.hiCMatrix(pMatrixFile=pMatrixFile, )
+    # pBedFileHicPro = ROOT + 'test_matrix.bed'  # no parameter for this in hiCMatrix::__init__() anyway
+    # hic_matrix = hm.hiCMatrix(pMatrixFile=pMatrixFile)
     # out, err = capsys.readouterr()
     # assert out == 'matrix file not given'
     pMatrixFile = ROOT + 'test_matrix.homer'
-    hic_matrix = hm.hiCMatrix(pMatrixFile=pMatrixFile)
-
-
+    hm.hiCMatrix(pMatrixFile=pMatrixFile)
 
 
 def test_convert_to_zscore_matrix():

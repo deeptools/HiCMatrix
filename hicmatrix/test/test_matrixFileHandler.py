@@ -8,6 +8,7 @@ outfile = '/tmp/matrix'
 
 # TODO(Frederic): add more testcases eg., more parameters for file handler, different parameters for saving ...
 
+
 def test_load_and_save_homer(capsys):
     homer_outfile = outfile + '.homer'
 
