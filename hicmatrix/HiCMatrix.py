@@ -106,22 +106,6 @@ class hiCMatrix:
         """
         checks if the matrix is complete or if only half of the matrix was saved.
         Returns a whole matrix.
-
-        >>> from scipy.sparse import csr_matrix
-        >>> import numpy as np
-        >>> A = csr_matrix(np.array([[12,5,3,2,0],[0,11,4,1,1],
-        ... [0,0,9,6,0], [0,0,0,10,0], [0,0,0,0,0]]), dtype=np.int32)
-        >>> hm = hiCMatrix()
-        >>> hm.matrix = A
-        >>> hm.fillLowerTriangle()
-        >>> B = hm.matrix
-        >>> B.todense()
-        matrix([[12,  5,  3,  2,  0],
-                [ 5, 11,  4,  1,  1],
-                [ 3,  4,  9,  6,  0],
-                [ 2,  1,  6, 10,  0],
-                [ 0,  1,  0,  0,  0]], dtype=int32)
-
         """
         # log.debug('sum of tril: {}'.format(tril(self.matrix, k=-1).sum()))
         if tril(self.matrix, k=-1).sum() == 0:
@@ -287,22 +271,6 @@ class hiCMatrix:
 
             A matching list containing the chromosome name
             is also returned
-
-        >>> from scipy.sparse import coo_matrix
-        >>> import numpy as np
-        >>> row, col = np.triu_indices(5)
-        >>> cut_intervals = [('a', 0, 10, 1), ('a', 10, 20, 1),
-        ... ('a', 20, 30, 1), ('a', 30, 40, 1), ('b', 40, 50, 1)]
-        >>> dist_list, chrom_list = hiCMatrix.getDistList(row, col,
-        ... cut_intervals)
-        >>> coo_matrix((dist_list, (row, col)), shape=(5,5), dtype=np.int32).todense()
-        matrix([[ 0, 10, 20, 30, -1],
-                [ 0,  0, 10, 20, -1],
-                [ 0,  0,  0, 10, -1],
-                [ 0,  0,  0,  0, -1],
-                [ 0,  0,  0,  0,  0]], dtype=int32)
-        >>> chrom_list.tolist()
-        ['a', 'a', 'a', 'a', '', 'a', 'a', 'a', '', 'a', 'a', '', 'a', '', 'b']
         """
         chrnamelist, startlist, endlist, extralist = zip(*cut_intervals)
         # now the distance between any two points
@@ -391,44 +359,6 @@ class hiCMatrix:
         -------
         observed / expected sparse matrix
 
-        >>> from scipy.sparse import csr_matrix, dia_matrix
-        >>> import numpy as np
-        >>> row, col = np.triu_indices(5)
-        >>> cut_intervals = [('a', 0, 10, 1), ('a', 10, 20, 1),
-        ... ('a', 20, 30, 1), ('a', 30, 40, 1), ('b', 40, 50, 1)]
-        >>> hic = hiCMatrix()
-        >>> hic.nan_bins = []
-        >>> matrix = np.array([
-        ... [ 1,  8,  5, 3, 0],
-        ... [ 0,  4, 15, 5, 1],
-        ... [ 0,  0,  0, 7, 2],
-        ... [ 0,  0,  0, 0, 1],
-        ... [ 0,  0,  0, 0, 0]])
-
-        >>> hic.matrix = csr_matrix(matrix)
-        >>> hic.setMatrix(hic.matrix, cut_intervals)
-        >>> hic.convert_to_obs_exp_matrix().todense()
-        matrix([[1. , 0.8, 1. , 1. , 0. ],
-                [0. , 4. , 1.5, 1. , 1. ],
-                [0. , 0. , 0. , 0.7, 2. ],
-                [0. , 0. , 0. , 0. , 1. ],
-                [0. , 0. , 0. , 0. , 0. ]])
-
-        >>> hic.matrix = csr_matrix(matrix)
-        >>> hic.convert_to_obs_exp_matrix(maxdepth=20).todense()
-        matrix([[1. , 0.8, 1. , 0. , 0. ],
-                [0. , 4. , 1.5, 1. , 0. ],
-                [0. , 0. , 0. , 0.7, nan],
-                [0. , 0. , 0. , 0. , nan],
-                [0. , 0. , 0. , 0. , 0. ]])
-
-        >>> hic.matrix = csr_matrix(matrix)
-        >>> hic.convert_to_obs_exp_matrix(zscore=True).todense()
-        matrix([[ 0.        , -0.56195149,         nan,         nan, -1.41421356],
-                [ 0.        ,  1.93649167,  1.40487872,         nan,  0.        ],
-                [ 0.        ,  0.        , -0.64549722, -0.84292723,  1.41421356],
-                [ 0.        ,  0.        ,  0.        , -0.64549722,  0.        ],
-                [ 0.        ,  0.        ,  0.        ,  0.        , -0.64549722]])
 
         nans occur where the standard deviation is zero
         """
@@ -732,29 +662,6 @@ class hiCMatrix:
     def filterOutInterChrCounts(self):
         """
         set all inter chromosomal counts to np.nan
-        >>> from scipy.sparse import coo_matrix
-        >>> import numpy as np
-        >>> row, col = np.triu_indices(5)
-        >>> cut_intervals = [('a', 0, 10, 1), ('a', 10, 20, 1),
-        ... ('a', 20, 30, 1), ('b', 30, 40, 1), ('b', 40, 50, 1)]
-        >>> hic = hiCMatrix()
-        >>> hic.nan_bins = []
-        >>> matrix = np.array([
-        ... [ 0, 10,  5, 3, 0],
-        ... [ 0,  0, 15, 5, 1],
-        ... [ 0,  0,  0, 7, 3],
-        ... [ 0,  0,  0, 0, 1],
-        ... [ 0,  0,  0, 0, 0]])
-
-        make the matrix symmetric:
-        >>> hic.matrix = csr_matrix(matrix + matrix.T)
-        >>> hic.setMatrix(csr_matrix(matrix + matrix.T, dtype=np.int32), cut_intervals)
-        >>> hic.filterOutInterChrCounts().todense()
-        matrix([[ 0, 10,  5,  0,  0],
-                [10,  0, 15,  0,  0],
-                [ 5, 15,  0,  0,  0],
-                [ 0,  0,  0,  0,  1],
-                [ 0,  0,  0,  1,  0]], dtype=int32)
         """
 
         ma_coo = self.matrix.tocoo()
@@ -901,47 +808,6 @@ class hiCMatrix:
         """
         Puts backs into the matrix the bins
         removed
-
-
-        Examples
-        --------
-        >>> from scipy.sparse import coo_matrix
-        >>> row, col = np.triu_indices(5)
-        >>> cut_intervals = [('a', 0, 10, 1), ('a', 10, 20, 1),
-        ... ('a', 20, 30, 1), ('a', 30, 40, 1), ('b', 40, 50, 1)]
-        >>> hic = hiCMatrix()
-        >>> hic.nan_bins = []
-        >>> matrix = np.array([
-        ... [ 0, 10,  5, 3, 0],
-        ... [ 0,  0, 15, 5, 1],
-        ... [ 0,  0,  0, 7, 3],
-        ... [ 0,  0,  0, 0, 1],
-        ... [ 0,  0,  0, 0, 0]], dtype=np.int32)
-
-        make the matrix symmetric:
-        >>> hic.matrix = csr_matrix(matrix + matrix.T)
-        >>> hic.setMatrix(csr_matrix(matrix + matrix.T), cut_intervals)
-
-        Add masked bins masked bins
-        >>> hic.maskBins([3])
-        >>> hic.matrix.todense()
-        matrix([[ 0, 10,  5,  0],
-                [10,  0, 15,  1],
-                [ 5, 15,  0,  3],
-                [ 0,  1,  3,  0]], dtype=int32)
-        >>> hic.cut_intervals
-        [('a', 0, 10, 1), ('a', 10, 20, 1), ('a', 20, 30, 1), ('b', 40, 50, 1)]
-
-        >>> hic.restoreMaskedBins()
-        >>> hic.matrix.todense()
-        matrix([[ 0., 10.,  5.,  0.,  0.],
-                [10.,  0., 15.,  0.,  1.],
-                [ 5., 15.,  0.,  0.,  3.],
-                [ 0.,  0.,  0.,  0.,  0.],
-                [ 0.,  1.,  3.,  0.,  0.]])
-
-        >>> hic.cut_intervals
-        [('a', 0, 10, 1), ('a', 10, 20, 1), ('a', 20, 30, 1), ('a', 30, 40, 1), ('b', 40, 50, 1)]
         """
         if len(self.orig_bin_ids) == 0:
             return

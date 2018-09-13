@@ -11,7 +11,8 @@ from intervaltree import IntervalTree, Interval
 
 import numpy as np
 import numpy.testing as nt
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_matrix, dia_matrix
+from scipy.sparse import coo_matrix
 from tempfile import NamedTemporaryFile
 
 from hicmatrix import HiCMatrix as hm
@@ -791,6 +792,30 @@ def test_filterOutInterChrCounts():
 
     nt.assert_equal(hic.getMatrix(), filtered_matrix)
 
+    row, col = np.triu_indices(5)
+    cut_intervals = [('a', 0, 10, 1), ('a', 10, 20, 1),
+                     ('a', 20, 30, 1), ('b', 30, 40, 1), ('b', 40, 50, 1)]
+    hic = hm.hiCMatrix()
+    hic.nan_bins = []
+    matrix = np.array([[0, 10, 5, 3, 0],
+                       [0, 0, 15, 5, 1],
+                       [0, 0, 0, 7, 3],
+                       [0, 0, 0, 0, 1],
+                       [0, 0, 0, 0, 0]])
+
+    # make the matrix symmetric:
+    hic.matrix = csr_matrix(matrix + matrix.T)
+    hic.setMatrix(csr_matrix(matrix + matrix.T, dtype=np.int32), cut_intervals)
+
+    filtered = hic.filterOutInterChrCounts().todense()
+    test_matrix = np.array([[0, 10, 5, 0, 0],
+                            [10, 0, 15, 0, 0],
+                            [5, 15, 0, 0, 0],
+                            [0, 0, 0, 0, 1],
+                            [0, 0, 0, 1, 0]], dtype='i4')
+
+    nt.assert_equal(filtered, test_matrix)
+
 
 def test_setMatrixValues_success():
     hic = hm.hiCMatrix()
@@ -1215,6 +1240,54 @@ def test_restoreMaskedBins():
     nt.assert_equal(hic.getMatrix(), result_matrix)
     nt.assert_equal(hic.orig_bin_ids, [])
 
+    row, col = np.triu_indices(5)
+    cut_intervals = [('a', 0, 10, 1), ('a', 10, 20, 1),
+                     ('a', 20, 30, 1), ('a', 30, 40, 1), ('b', 40, 50, 1)]
+    hic = hm.hiCMatrix()
+    hic.nan_bins = []
+    matrix = np.array([[0, 10, 5, 3, 0],
+                       [0, 0, 15, 5, 1],
+                       [0, 0, 0, 7, 3],
+                       [0, 0, 0, 0, 1],
+                       [0, 0, 0, 0, 0]], dtype=np.int32)
+
+    # make the matrix symmetric:
+    hic.matrix = csr_matrix(matrix + matrix.T)
+    hic.setMatrix(csr_matrix(matrix + matrix.T), cut_intervals)
+
+    # Add masked bins masked bins
+    hic.maskBins([3])
+
+    matrix = hic.matrix.todense()
+    test_matrix = np.array([[0, 10, 5, 0],
+                            [10, 0, 15, 1],
+                            [5, 15, 0, 3],
+                            [0, 1, 3, 0]], dtype=np.int32)
+
+    nt.assert_equal(matrix, test_matrix)
+
+    cut_int = hic.cut_intervals
+    test_cut_int = [('a', 0, 10, 1), ('a', 10, 20, 1), ('a', 20, 30, 1), ('b', 40, 50, 1)]
+
+    nt.assert_equal(cut_int, test_cut_int)
+
+    hic.restoreMaskedBins()
+
+    dense = hic.matrix.todense()
+    test_dense = np.array([[0., 10., 5., 0., 0.],
+                           [10., 0., 15., 0., 1.],
+                           [5., 15., 0., 0., 3.],
+                           [0., 0., 0., 0., 0.],
+                           [0., 1., 3., 0., 0.]])
+
+    nt.assert_equal(dense, test_dense)
+
+    cut_int = hic.cut_intervals
+    test_cut_int = [('a', 0, 10, 1), ('a', 10, 20, 1), ('a', 20, 30, 1),
+                    ('a', 30, 40, 1), ('b', 40, 50, 1)]
+
+    nt.assert_equal(cut_int, test_cut_int)
+
 
 def test_reorderMatrix():
     orig = (1, 3)
@@ -1511,3 +1584,86 @@ def test_intervalListToIntervalTree(capsys):
     # test boundaries
     nt.assert_equal(boundaries, OrderedDict([('a', (0, 2)), ('b', (2, 5)), ('c', (5, 7)),
                                              ('d', (7, 8)), ('e', (8, 9))]))
+
+
+def test_fillLowerTriangle():
+    A = csr_matrix(np.array([[12, 5, 3, 2, 0], [0, 11, 4, 1, 1], [0, 0, 9, 6, 0],
+                            [0, 0, 0, 10, 0], [0, 0, 0, 0, 0]]), dtype=np.int32)
+    hic = hm.hiCMatrix()
+    hic.matrix = A
+    hic.fillLowerTriangle()
+    B = hic.matrix
+    test_matrix = np.matrix([[12, 5, 3, 2, 0],
+                             [5, 11, 4, 1, 1],
+                             [3, 4, 9, 6, 0],
+                             [2, 1, 6, 10, 0],
+                             [0, 1, 0, 0, 0]], dtype='i4')
+
+    nt.assert_equal(B.todense(), test_matrix)
+
+
+def test_getDistList():
+    row, col = np.triu_indices(5)
+    cut_intervals = [('a', 0, 10, 1), ('a', 10, 20, 1),
+                     ('a', 20, 30, 1), ('a', 30, 40, 1), ('b', 40, 50, 1)]
+    dist_list, chrom_list = hm.hiCMatrix.getDistList(row, col, cut_intervals)
+
+    matrix = coo_matrix((dist_list, (row, col)), shape=(5, 5), dtype=np.int32).todense()
+    test_matrix = np.array([[0, 10, 20, 30, -1],
+                            [0, 0, 10, 20, -1],
+                            [0, 0, 0, 10, -1],
+                            [0, 0, 0, 0, -1],
+                            [0, 0, 0, 0, 0]], dtype='i4')
+    nt.assert_equal(matrix, test_matrix)
+
+    chrom_list = chrom_list.tolist()
+    test_chrom_list = ['a', 'a', 'a', 'a', '', 'a', 'a', 'a', '', 'a', 'a', '', 'a',
+                       '', 'b']
+
+    nt.assert_equal(chrom_list, test_chrom_list)
+
+
+def test_convert_to_obs_exp_matrix():
+    row, col = np.triu_indices(5)
+    cut_intervals = [('a', 0, 10, 1), ('a', 10, 20, 1),
+                     ('a', 20, 30, 1), ('a', 30, 40, 1), ('b', 40, 50, 1)]
+    hic = hm.hiCMatrix()
+    hic.nan_bins = []
+    matrix = np.array([[1, 8, 5, 3, 0],
+                       [0, 4, 15, 5, 1],
+                       [0, 0, 0, 7, 2],
+                       [0, 0, 0, 0, 1],
+                       [0, 0, 0, 0, 0]])
+
+    hic.matrix = csr_matrix(matrix)
+    hic.setMatrix(hic.matrix, cut_intervals)
+
+    obs_exp_matrix = hic.convert_to_obs_exp_matrix().todense()
+    test_matrix = np.array([[1., 0.8, 1., 1., 0.],
+                            [0., 4., 1.5, 1., 1.],
+                            [0., 0., 0., 0.7, 2.],
+                            [0., 0., 0., 0., 1.],
+                            [0., 0., 0., 0., 0.]])
+
+    nt.assert_equal(obs_exp_matrix, test_matrix)
+
+    hic.matrix = csr_matrix(matrix)
+    obs_exp_matrix = hic.convert_to_obs_exp_matrix(maxdepth=20).todense()
+    test_matrix = np.array([[1., 0.8, 1., 0., 0.],
+                            [0., 4., 1.5, 1., 0.],
+                            [0., 0., 0., 0.7, np.nan],
+                            [0., 0., 0., 0., np.nan],
+                            [0., 0., 0., 0., 0.]])
+
+    nt.assert_equal(obs_exp_matrix, test_matrix)
+
+    hic.matrix = csr_matrix(matrix)
+
+    obs_exp_matrix = hic.convert_to_obs_exp_matrix(zscore=True).todense()
+    test_matrix = np.array([[0., -0.56195149, np.nan, np.nan, -1.41421356],
+                            [0., 1.93649167, 1.40487872, np.nan, 0.],
+                            [0., 0., -0.64549722, -0.84292723, 1.41421356],
+                            [0., 0., 0., -0.64549722, 0.],
+                            [0., 0., 0., 0., -0.64549722]])
+
+    nt.assert_almost_equal(obs_exp_matrix, test_matrix)
