@@ -1,7 +1,6 @@
 from .matrixFile import MatrixFile
 from scipy.sparse import csr_matrix
 from builtins import super
-
 import logging
 log = logging.getLogger(__name__)
 
@@ -22,11 +21,8 @@ class Homer(MatrixFile, object):
             start_first = int(values[2].strip().split('-')[1])
             start_second = int(values[3].strip().split('-')[1])
             bin_size = start_second - start_first
-            log.debug('values {}'.format(values))
             for i, value in enumerate(values[2:]):
                 chrom, start = value.strip().split('-')
-                # log.debug('chrom {} start {}'.format(chrom, start))
-
                 cut_intervals.append((chrom, int(start), int(start) + bin_size, 1))
 
             matrix_dense = []
@@ -36,7 +32,6 @@ class Homer(MatrixFile, object):
                 for i, value in enumerate(values[2:]):
                     data.append(float(value))
                 matrix_dense.append(data)
-            # log.debug('data {}'.format(data))
 
         matrix = csr_matrix(matrix_dense)
         nan_bins = None
