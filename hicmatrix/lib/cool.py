@@ -18,6 +18,8 @@ class Cool(MatrixFile, object):
         self.chrnameList = None
         self.correctionFactorTable = 'weight'
         self.correctionOperator = '*'
+        self.enforceInteger = True
+        
 
     def getInformationCoolerBinNames(self):
         return cooler.Cooler(self.matrixFileName).bins().columns.values
@@ -159,6 +161,7 @@ class Cool(MatrixFile, object):
 
         if self.correction_factors is not None and pApplyCorrection:
             weight = convertNansToOnes(np.array(self.correction_factors).flatten())
+            self.correctionFactorTable
             bins_data_frame = bins_data_frame.assign(weight=weight)
 
         # get only the upper triangle of the matrix to save to disk
@@ -181,7 +184,12 @@ class Cool(MatrixFile, object):
                 instances_factors *= features_factors
                 self.matrix.data = self.matrix.data.astype(float)
 
-                self.matrix.data /= instances_factors
+                # Apply the invert operation to get the original data 
+                if self.correctionOperator == '*':
+                    self.matrix.data /= instances_factors
+                elif self.correctionOperator == '/':
+                    self.matrix.data *= instances_factors   
+
                 instances_factors = None
                 features_factors = None
 
@@ -195,7 +203,10 @@ class Cool(MatrixFile, object):
             instances, features = self.matrix.nonzero()
             data = self.matrix.data.tolist()
 
-            if self.matrix.dtype not in [np.int32, int]:
+            if self.enforceInteger:
+                cooler._writer.COUNT_DTYPE = np.int32
+                data = np.rint(data)
+            elif self.matrix.dtype not in [np.int32, int]:
                 log.warning("Writing non-standard cooler matrix. Datatype of matrix['count'] is: {}".format(self.matrix.dtype))
                 cooler._writer.COUNT_DTYPE = self.matrix.dtype
 
