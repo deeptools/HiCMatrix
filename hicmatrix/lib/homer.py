@@ -44,8 +44,8 @@ class Homer(MatrixFile, object):
         correction_factors = None
         return matrix, cut_intervals, nan_bins, distance_counts, correction_factors
 
-    def save(self, pFilename,  pSymmetric=None, pApplyCorrection=None):
-        
+    def save(self, pFilename, pSymmetric=None, pApplyCorrection=None):
+
         with open(pFilename, 'w') as homerMatrixFile:
             homerMatrixFile.write('HiCMatrix (directory=.)\tRegions\t')
             for bin_interval in self.cut_intervals:
@@ -55,7 +55,7 @@ class Homer(MatrixFile, object):
             for i in range(self.matrix.shape[0]):
                 data = '\t'.join(map(str, self.matrix[i, :].toarray().flatten()))
                 homerMatrixFile.write('{}-{}\t{}-{}\t'.format(self.cut_intervals[i][0], self.cut_intervals[i][1],
-                                                            self.cut_intervals[i][0], self.cut_intervals[i][1]))
-                homerMatrixFile.write('{}'.format(data))                                    
+                                                              self.cut_intervals[i][0], self.cut_intervals[i][1]))
+                homerMatrixFile.write('{}'.format(data))
                 if i < self.matrix.shape[0] - 1:
                     homerMatrixFile.write('\n')
