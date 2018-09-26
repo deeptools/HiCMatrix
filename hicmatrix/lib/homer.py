@@ -1,6 +1,7 @@
 from .matrixFile import MatrixFile
 from scipy.sparse import csr_matrix
 from builtins import super
+import gzip
 import logging
 log = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ class Homer(MatrixFile, object):
 
     def save(self, pFilename, pSymmetric=None, pApplyCorrection=None):
 
-        with open(pFilename, 'w') as homerMatrixFile:
+        with gzip.open(pFilename, 'wt') as homerMatrixFile:
             homerMatrixFile.write('HiCMatrix (directory=.)\tRegions\t')
             for bin_interval in self.cut_intervals:
                 homerMatrixFile.write('{}-{}\t'.format(bin_interval[0], bin_interval[1]))
