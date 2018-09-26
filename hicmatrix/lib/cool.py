@@ -1,7 +1,7 @@
 import cooler
 import logging
 import numpy as np
-from scipy.sparse import triu
+from scipy.sparse import triu, csr_matrix
 import pandas as pd
 from past.builtins import zip
 from builtins import super
@@ -40,7 +40,29 @@ class Cool(MatrixFile, object):
             exit()
 
         if self.chrnameList is None:
-            matrix = cooler_file.matrix(balance=False, sparse=True)[:].tocsr()
+            matrixDataFrame = cooler_file.matrix(balance=False, sparse=True, as_pixels=True)
+            used_dtype = np.int32
+            if np.iinfo(np.int32).max < cooler_file.info['nbins']:
+                used_dtype = np.int64
+            data = np.empty(cooler_file.info['nnz'], dtype=used_dtype)
+            instances = np.empty(cooler_file.info['nnz'], dtype=used_dtype)
+            features = np.empty(cooler_file.info['nnz'], dtype=used_dtype)
+            i = 0
+            size = cooler_file.info['nbins'] // 32
+            start_pos = 0
+            while i < cooler_file.info['nbins']:
+                csr_data = matrixDataFrame[i:i+size].values.astype(used_dtype).T
+                lenght_data = len(csr_data[0])
+                data[start_pos:start_pos+lenght_data] = csr_data[2]
+                instances[start_pos:start_pos+lenght_data] = csr_data[0]
+                features[start_pos:start_pos+lenght_data] = csr_data[1]
+                start_pos += lenght_data
+                del csr_data
+                i += size
+            matrix = csr_matrix((data, (instances, features)), shape=(cooler_file.info['nbins'],cooler_file.info['nbins']), dtype=used_dtype)
+            del data
+            del instances
+            del features
         else:
             if len(self.chrnameList) == 1:
                 try:
