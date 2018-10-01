@@ -240,20 +240,24 @@ def test_load_cool(capsys):
     # (8, 34)	10.867553045286272
     # (8, 35)	42.44332645326515
 
-    test_cut_intervals = np.array([('X', 0, 2200, 1.0), ('X', 2200, 4702, 1.0), ('X', 4702, 7060, 1.0),
-                                   ('X', 7060, 8811, 1.0), ('X', 8811, 11048, 1.0), ('X', 11048, 14329, 1.0),
-                                   ('X', 14329, 16847, 1.0), ('X', 16847, 19537, 1.0), ('X', 19537, 20701, 1.0),
-                                   ('X', 20701, 22321, 1.0), ('X', 22321, 24083, 1.0), ('X', 24083, 25983, 1.0),
-                                   ('X', 25983, 27619, 1.0), ('X', 27619, 29733, 1.0), ('X', 29733, 30973, 1.0),
-                                   ('X', 30973, 32214, 1.0), ('X', 32214, 34179, 1.0), ('X', 34179, 35987, 1.0),
-                                   ('X', 35987, 37598, 1.0), ('X', 37598, 39009, 1.0)])
-    # nt.assert_almost_equal(cut_intervals[0:20], test_cut_intervals)
-    with capsys.disabled():
-        # print('\n')
-        print(type(cut_intervals[0:20]))
-        # print(nan_bins)
-        # print(correction_factors)
-        # print(distance_counts)
+    test_cut_intervals = [('X', 0, 2200, 1.0), ('X', 2200, 4702, 1.0), ('X', 4702, 7060, 1.0),
+                          ('X', 7060, 8811, 1.0), ('X', 8811, 11048, 1.0), ('X', 11048, 14329, 1.0),
+                          ('X', 14329, 16847, 1.0), ('X', 16847, 19537, 1.0), ('X', 19537, 20701, 1.0),
+                          ('X', 20701, 22321, 1.0), ('X', 22321, 24083, 1.0), ('X', 24083, 25983, 1.0),
+                          ('X', 25983, 27619, 1.0), ('X', 27619, 29733, 1.0), ('X', 29733, 30973, 1.0),
+                          ('X', 30973, 32214, 1.0), ('X', 32214, 34179, 1.0), ('X', 34179, 35987, 1.0),
+                          ('X', 35987, 37598, 1.0), ('X', 37598, 39009, 1.0)]
+    for index, tup in enumerate(cut_intervals[0:20]):
+        for ind, element in enumerate(tup):
+            assert element == test_cut_intervals[index][ind]
+
+    test_nan_bins = [0, 1, 2, 3, 4, 5, 6, 7, 30, 31]
+    nt.assert_almost_equal(nan_bins[0:10], test_nan_bins)
+
+    test_correction_factors = [1., 1., 1., 1., 1., 1., 1., 1., 0.90720049, 1.25516028]
+    nt.assert_almost_equal(correction_factors[0:10], test_correction_factors)
+
+    assert distance_counts is None
 
 
 def test_save_cool():
@@ -274,5 +278,9 @@ def test_save_cool():
     os.unlink(cool_outfile)
 
 
-def test_load_and_save_ginteractions():
+def test_load_ginteractions():
+    pass
+
+
+def test_save_ginteractions():
     pass

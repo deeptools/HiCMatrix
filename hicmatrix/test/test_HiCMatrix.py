@@ -1645,7 +1645,7 @@ def test_convert_to_obs_exp_matrix():
                             [0., 0., 0., 0., 1.],
                             [0., 0., 0., 0., 0.]])
 
-    nt.assert_equal(obs_exp_matrix, test_matrix)
+    nt.assert_almost_equal(obs_exp_matrix, test_matrix)
 
     hic.matrix = csr_matrix(matrix)
     obs_exp_matrix = hic.convert_to_obs_exp_matrix(maxdepth=20).todense()
@@ -1655,7 +1655,7 @@ def test_convert_to_obs_exp_matrix():
                             [0., 0., 0., 0., np.nan],
                             [0., 0., 0., 0., 0.]])
 
-    nt.assert_equal(obs_exp_matrix, test_matrix)
+    nt.assert_almost_equal(obs_exp_matrix, test_matrix)
 
     hic.matrix = csr_matrix(matrix)
 
