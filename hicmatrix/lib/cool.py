@@ -19,7 +19,6 @@ class Cool(MatrixFile, object):
         self.correctionFactorTable = 'weight'
         self.correctionOperator = '*'
         self.enforceInteger = True
-        
 
     def getInformationCoolerBinNames(self):
         return cooler.Cooler(self.matrixFileName).bins().columns.values
@@ -51,15 +50,15 @@ class Cool(MatrixFile, object):
             size = cooler_file.info['nbins'] // 32
             start_pos = 0
             while i < cooler_file.info['nbins']:
-                csr_data = matrixDataFrame[i:i+size].values.astype(used_dtype).T
+                csr_data = matrixDataFrame[i:i + size].values.astype(used_dtype).T
                 lenght_data = len(csr_data[0])
-                data[start_pos:start_pos+lenght_data] = csr_data[2]
-                instances[start_pos:start_pos+lenght_data] = csr_data[0]
-                features[start_pos:start_pos+lenght_data] = csr_data[1]
+                data[start_pos:start_pos + lenght_data] = csr_data[2]
+                instances[start_pos:start_pos + lenght_data] = csr_data[0]
+                features[start_pos:start_pos + lenght_data] = csr_data[1]
                 start_pos += lenght_data
                 del csr_data
                 i += size
-            matrix = csr_matrix((data, (instances, features)), shape=(cooler_file.info['nbins'],cooler_file.info['nbins']), dtype=used_dtype)
+            matrix = csr_matrix((data, (instances, features)), shape=(cooler_file.info['nbins'], cooler_file.info['nbins']), dtype=used_dtype)
             del data
             del instances
             del features
@@ -206,11 +205,11 @@ class Cool(MatrixFile, object):
                 instances_factors *= features_factors
                 self.matrix.data = self.matrix.data.astype(float)
 
-                # Apply the invert operation to get the original data 
+                # Apply the invert operation to get the original data
                 if self.correctionOperator == '*':
                     self.matrix.data /= instances_factors
                 elif self.correctionOperator == '/':
-                    self.matrix.data *= instances_factors   
+                    self.matrix.data *= instances_factors
 
                 instances_factors = None
                 features_factors = None
