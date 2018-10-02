@@ -48,6 +48,8 @@ class Cool(MatrixFile, object):
             features = np.empty(cooler_file.info['nnz'], dtype=used_dtype)
             i = 0
             size = cooler_file.info['nbins'] // 32
+            if size == 0:
+                size = 1
             start_pos = 0
             while i < cooler_file.info['nbins']:
                 csr_data = matrixDataFrame[i:i + size].values.astype(used_dtype).T
