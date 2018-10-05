@@ -47,7 +47,6 @@ def test_load_homer(capsys):
     assert correction_factors is None
 
 
-@pytest.mark.xfail
 def test_save_homer():
     homer_outfile = outfile + '.homer'
 
