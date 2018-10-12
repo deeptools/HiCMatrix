@@ -10,7 +10,7 @@ class MatrixFileHandler():
 
     def __init__(self, pFileType='cool', pMatrixFile=None, pChrnameList=None,
                  pApplyCorrectionCooler=None, pBedFileHicPro=None, pCorrectionFactorTable=None,
-                 pCorrectionOperator=None):
+                 pCorrectionOperator=None, pEnforceInteger=None):
 
         self.class_ = getattr(importlib.import_module('.' + pFileType.lower(), package='hicmatrix.lib'), pFileType.title())
 
@@ -24,6 +24,8 @@ class MatrixFileHandler():
                     self.matrixFile.correctionFactorTable = pCorrectionFactorTable
                 if pCorrectionOperator is not None:
                     self.matrixFile.correctionOperator = pCorrectionOperator
+                if pEnforceInteger is not None:
+                    self.matrixFile.enforceInteger = pEnforceInteger
 
     def load(self):
 
