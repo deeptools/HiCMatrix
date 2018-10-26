@@ -730,6 +730,19 @@ class hiCMatrix:
         self.interval_trees, self.chrBinBoundaries = \
             self.intervalListToIntervalTree(self.cut_intervals)
 
+    def maskChromosomes(self, pChromosomeList):
+        mask_ids = []
+        pChromosomeList = check_chrom_str_bytes(self.chrBinBoundaries, pChromosomeList)
+
+        for chromosome in pChromosomeList:
+            # check that the chromosome names are valid
+            if chromosome not in self.chrBinBoundaries:
+                exit("Chromosome name '{}' not found. Please check the correct spelling "
+                     "of the chromosomes and try again".format(chromosome))
+            orig = self.chrBinBoundaries[chromosome]
+            mask_ids.extend(list(range(orig[0], orig[1])))
+        self.maskBins(mask_ids)
+
     def maskBins(self, bin_ids=None):
         """
         Mask the list of bins given. Mask means
