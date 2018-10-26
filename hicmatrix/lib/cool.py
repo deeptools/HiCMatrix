@@ -158,7 +158,6 @@ class Cool(MatrixFile, object):
         if self.nan_bins is not None and len(self.nan_bins) > 0:
             # remove nan_bins by multipling them with 0 to set them to 0.
             correction_factors = np.ones(self.matrix.shape[0])
-            log.debug('self.nan_bins {}'.format(self.nan_bins))
             correction_factors[self.nan_bins] = 0
             _instances, _features = self.matrix.nonzero()
             instances_factors = correction_factors[_instances]
@@ -169,6 +168,7 @@ class Cool(MatrixFile, object):
 
         # set possible nans in data to 0
         self.matrix.data[np.argwhere(np.isnan(self.matrix.data))] = 0
+        self.matrix.eliminate_zeros()
 
         # save only the upper triangle of the
         if pSymmetric:
@@ -197,6 +197,7 @@ class Cool(MatrixFile, object):
 
         # revert correction to store orginal matrix
         if self.correction_factors is not None and pApplyCorrection:
+
             log.info("Reverting correction factors on matrix...")
             instances, features = self.matrix.nonzero()
             self.correction_factors = np.array(self.correction_factors)
@@ -224,7 +225,6 @@ class Cool(MatrixFile, object):
             data = self.matrix.data.tolist()
 
         else:
-
             instances, features = self.matrix.nonzero()
             data = self.matrix.data.tolist()
 
