@@ -155,9 +155,10 @@ class Cool(MatrixFile, object):
         log.debug('Save in cool format')
 
         self.matrix.eliminate_zeros()
-        if self.nan_bins is not None:
+        if self.nan_bins is not None and len(self.nan_bins) > 0:
             # remove nan_bins by multipling them with 0 to set them to 0.
             correction_factors = np.ones(self.matrix.shape[0])
+            log.debug('self.nan_bins {}'.format(self.nan_bins))
             correction_factors[self.nan_bins] = 0
             _instances, _features = self.matrix.nonzero()
             instances_factors = correction_factors[_instances]
