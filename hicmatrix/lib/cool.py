@@ -18,7 +18,7 @@ class Cool(MatrixFile, object):
         self.chrnameList = None
         self.correctionFactorTable = 'weight'
         self.correctionOperator = '*'
-        self.enforceInteger = True
+        self.enforceInteger = False
 
     def getInformationCoolerBinNames(self):
         return cooler.Cooler(self.matrixFileName).bins().columns.values
@@ -177,15 +177,18 @@ class Cool(MatrixFile, object):
         else:
             self.matrix = self.matrix
 
+        self.matrix.eliminate_zeros()
+
         # create data frame for bins
         # self.cut_intervals is having 4 tuples, bin_data_frame should have 3.correction_factors
         # it looks like it is faster to create it with 4, and drop the last one
         # instead of handling this before.
         bins_data_frame = pd.DataFrame(self.cut_intervals, columns=['chrom', 'start', 'end', 'interactions']).drop('interactions', axis=1)
+        del self.cut_intervals
 
         if self.correction_factors is not None and pApplyCorrection:
             weight = convertNansToOnes(np.array(self.correction_factors).flatten())
-            self.correctionFactorTable
+            # self.correctionFactorTable
             bins_data_frame = bins_data_frame.assign(weight=weight)
 
         # get only the upper triangle of the matrix to save to disk
@@ -221,28 +224,53 @@ class Cool(MatrixFile, object):
                 self.matrix.data = np.rint(self.matrix.data)
                 self.matrix.data = self.matrix.data.astype(int)
 
-            data = self.matrix.data.tolist()
+            # data = self.matrix.data.tolist()
 
-        else:
-            instances, features = self.matrix.nonzero()
-            data = self.matrix.data.tolist()
+        # else:
+            
+        #     log.debug('get data')
 
-            if self.enforceInteger:
-                cooler._writer.COUNT_DTYPE = np.int32
-                data = np.rint(data)
-            elif self.matrix.dtype not in [np.int32, int]:
-                log.warning("Writing non-standard cooler matrix. Datatype of matrix['count'] is: {}".format(self.matrix.dtype))
-                cooler._writer.COUNT_DTYPE = self.matrix.dtype
+        #     data = self.matrix.data
 
-        if len(instances) == 0 and len(features) == 0:
-            exit('No data present. Exit.')
-        else:
-            matrix_tuple_list = np.stack((instances.tolist(), features.tolist()), axis=-1)
-            matrix_data_frame = pd.DataFrame(matrix_tuple_list, columns=['bin1_id', 'bin2_id'], dtype=np.int32)
+           
 
+        # if len(instances) == 0 and len(features) == 0:
+        #     exit('No data present. Exit.')
+        # else:
+        log.debug('create 1 frame bin')
+        # matrix_tuple_list = np.stack((instances, features), axis=-1)
+        # matrix_tuple_list = zip(instances, features)
+        # dict_bins = {'bin1_id' : instances, 'bin2_id': features}
+        log.debug('get nonzeros')
+        instances, features = self.matrix.nonzero()
+
+        matrix_data_frame = pd.DataFrame(instances, columns=['bin1_id'], dtype=np.int32)
+        del instances
+        # del instances
+        # del features
+        log.debug('attach 1')
+        matrix_data_frame = matrix_data_frame.assign(bin2_id=features)
+        del features
+        # matrix_data_frame = pd.DataFrame(matrix_tuple_list, columns=['bin1_id', 'bin2_id'], dtype=np.int32)
+        # matrix_data_frame = pd.DataFrame(dict_bins, dtype=np.int32)
+
+        # del matrix_tuple_list
+        log.debug('create pamdas frame attach data')
+        if self.enforceInteger:
+            cooler._writer.COUNT_DTYPE = np.int32
+            data = np.rint(self.matrix.data)
             matrix_data_frame = matrix_data_frame.assign(count=data)
+        else:
+            matrix_data_frame = matrix_data_frame.assign(count=self.matrix.data)
 
-            cooler.io.create(cool_uri=pFileName,
-                             bins=bins_data_frame,
-                             pixels=matrix_data_frame,
-                             append=False)
+            
+        if self.matrix.dtype not in [np.int32, int]:
+            log.warning("Writing non-standard cooler matrix. Datatype of matrix['count'] is: {}".format(self.matrix.dtype))
+            cooler._writer.COUNT_DTYPE = self.matrix.dtype
+        split_factor = 1
+        if len(self.matrix.data) > 1e6:
+            split_factor = 1e4
+        cooler.io.create(cool_uri=pFileName,
+                            bins=bins_data_frame,
+                            pixels=np.array_split(matrix_data_frame, split_factor),
+                            append=False)
