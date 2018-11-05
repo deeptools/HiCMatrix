@@ -91,7 +91,6 @@ class Cool(MatrixFile, object):
             cut_intervals_data_frame = cooler_file.bins()[['chrom', 'start', 'end']][:]
 
         correction_factors = None
-        # log.debug("{} {}".format(correction_factors_data_frame, pApplyCorrection))
 
         if correction_factors_data_frame is not None and pApplyCorrection:
             log.debug("Apply correction factors")
@@ -136,19 +135,8 @@ class Cool(MatrixFile, object):
 
         distance_counts = None
 
-        # matrix = hiCMatrix.fillLowerTriangle(matrix)
-
         return matrix, cut_intervals, nan_bins, distance_counts, correction_factors
 
-    # def set_matrix_variables(self, pMatrix, pCutIntervals, pNanBins, pCorrectionFactors, pDistanceCounts):
-    #     super().set_matrix_variables(pMatrix, pCutIntervals, pNanBins, pCorrectionFactors, pDistanceCounts)
-
-    # def __create_empty_cool_file(self, pFileName):
-    #     bins_data_frame = pd.DataFrame(columns=['chrom', 'start', 'end', 'weight'])
-    #     matrix_data_frame = pd.DataFrame(columns=['bin1_id', 'bin2_id', 'count'])
-    #     cooler.io.create(cool_uri=pFileName,
-    #                      bins=bins_data_frame,
-    #                      pixels=matrix_data_frame)
 
     def save(self, pFileName, pSymmetric=True, pApplyCorrection=True):
         log.debug('Save in cool format')
@@ -173,7 +161,6 @@ class Cool(MatrixFile, object):
         if pSymmetric:
             # symmetric matrix
             self.matrix = triu(self.matrix, format='csr')
-            # log.debug('Symmetric {}'.format(pSymmetric))
         else:
             self.matrix = self.matrix
 
@@ -184,7 +171,6 @@ class Cool(MatrixFile, object):
         # it looks like it is faster to create it with 4, and drop the last one
         # instead of handling this before.
         bins_data_frame = pd.DataFrame(self.cut_intervals, columns=['chrom', 'start', 'end', 'interactions']).drop('interactions', axis=1)
-        del self.cut_intervals
 
         if self.correction_factors is not None and pApplyCorrection:
             weight = convertNansToOnes(np.array(self.correction_factors).flatten())
@@ -224,36 +210,13 @@ class Cool(MatrixFile, object):
                 self.matrix.data = np.rint(self.matrix.data)
                 self.matrix.data = self.matrix.data.astype(int)
 
-            # data = self.matrix.data.tolist()
-
-        # else:
-
-        #     log.debug('get data')
-
-        #     data = self.matrix.data
-
-        # if len(instances) == 0 and len(features) == 0:
-        #     exit('No data present. Exit.')
-        # else:
-        log.debug('create 1 frame bin')
-        # matrix_tuple_list = np.stack((instances, features), axis=-1)
-        # matrix_tuple_list = zip(instances, features)
-        # dict_bins = {'bin1_id' : instances, 'bin2_id': features}
-        log.debug('get nonzeros')
         instances, features = self.matrix.nonzero()
 
         matrix_data_frame = pd.DataFrame(instances, columns=['bin1_id'], dtype=np.int32)
         del instances
-        # del instances
-        # del features
-        log.debug('attach 1')
         matrix_data_frame = matrix_data_frame.assign(bin2_id=features)
         del features
-        # matrix_data_frame = pd.DataFrame(matrix_tuple_list, columns=['bin1_id', 'bin2_id'], dtype=np.int32)
-        # matrix_data_frame = pd.DataFrame(dict_bins, dtype=np.int32)
 
-        # del matrix_tuple_list
-        log.debug('create pamdas frame attach data')
         if self.enforceInteger:
             cooler._writer.COUNT_DTYPE = np.int32
             data = np.rint(self.matrix.data)
