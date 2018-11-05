@@ -227,12 +227,10 @@ class Cool(MatrixFile, object):
             # data = self.matrix.data.tolist()
 
         # else:
-            
+
         #     log.debug('get data')
 
         #     data = self.matrix.data
-
-           
 
         # if len(instances) == 0 and len(features) == 0:
         #     exit('No data present. Exit.')
@@ -263,7 +261,6 @@ class Cool(MatrixFile, object):
         else:
             matrix_data_frame = matrix_data_frame.assign(count=self.matrix.data)
 
-            
         if self.matrix.dtype not in [np.int32, int]:
             log.warning("Writing non-standard cooler matrix. Datatype of matrix['count'] is: {}".format(self.matrix.dtype))
             cooler._writer.COUNT_DTYPE = self.matrix.dtype
@@ -271,6 +268,6 @@ class Cool(MatrixFile, object):
         if len(self.matrix.data) > 1e6:
             split_factor = 1e4
         cooler.io.create(cool_uri=pFileName,
-                            bins=bins_data_frame,
-                            pixels=np.array_split(matrix_data_frame, split_factor),
-                            append=False)
+                         bins=bins_data_frame,
+                         pixels=np.array_split(matrix_data_frame, split_factor),
+                         append=False)
