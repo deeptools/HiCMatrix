@@ -1044,6 +1044,7 @@ def test_convert_to_obs_exp_matrix():
 
     nt.assert_almost_equal(obs_exp_matrix, test_matrix)
 
+
 def test_maskChromosomes():
 
     hic = hm.hiCMatrix()
