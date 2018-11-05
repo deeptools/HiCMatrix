@@ -200,7 +200,6 @@ def test_save_cool():
     os.unlink(cool_outfile)
 
 
-
 def test_save_cool_non_symmetric_apply_correction_true():
     cool_outfile = outfile + '.cool'
 
@@ -247,7 +246,7 @@ def test_save_cool_enforce_integer():
 
     # load data
     matrix, cut_intervals, nan_bins, distance_counts, correction_factors = fh.load()
-    
+
     # set matrix variables
     fh.set_matrix_variables(matrix, cut_intervals, nan_bins, correction_factors, distance_counts)
     # and save it.
@@ -274,6 +273,7 @@ def test_save_cool_apply_division_none_correction():
 
     os.unlink(cool_outfile)
 
+
 def test_save_cool_apply_division():
     cool_outfile = outfile + '.cool'
 
@@ -291,7 +291,8 @@ def test_save_cool_apply_division():
     fh.save(pName=cool_outfile, pSymmetric=False, pApplyCorrection=False)
 
     os.unlink(cool_outfile)
-    
+
+
 def test_load_ginteractions():
     pass
 

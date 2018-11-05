@@ -137,7 +137,6 @@ class Cool(MatrixFile, object):
 
         return matrix, cut_intervals, nan_bins, distance_counts, correction_factors
 
-
     def save(self, pFileName, pSymmetric=True, pApplyCorrection=True):
         log.debug('Save in cool format')
 
