@@ -200,6 +200,98 @@ def test_save_cool():
     os.unlink(cool_outfile)
 
 
+
+def test_save_cool_non_symmetric_apply_correction_true():
+    cool_outfile = outfile + '.cool'
+
+    # create matrixFileHandler instance with filetype 'cool'
+    pMatrixFile = ROOT + 'Li_et_al_2015.cool'
+    fh = MatrixFileHandler(pFileType='cool', pMatrixFile=pMatrixFile)
+    assert fh is not None
+
+    # load data
+    matrix, cut_intervals, nan_bins, distance_counts, correction_factors = fh.load()
+    # set matrix variables
+    fh.set_matrix_variables(matrix, cut_intervals, nan_bins, correction_factors, distance_counts)
+    # and save it.
+    fh.save(pName=cool_outfile, pSymmetric=False, pApplyCorrection=True)
+
+    os.unlink(cool_outfile)
+
+
+def test_save_cool_non_symmetric_apply_correction_false():
+    cool_outfile = outfile + '.cool'
+
+    # create matrixFileHandler instance with filetype 'cool'
+    pMatrixFile = ROOT + 'Li_et_al_2015.cool'
+    fh = MatrixFileHandler(pFileType='cool', pMatrixFile=pMatrixFile)
+    assert fh is not None
+
+    # load data
+    matrix, cut_intervals, nan_bins, distance_counts, correction_factors = fh.load()
+    # set matrix variables
+    fh.set_matrix_variables(matrix, cut_intervals, nan_bins, correction_factors, distance_counts)
+    # and save it.
+    fh.save(pName=cool_outfile, pSymmetric=False, pApplyCorrection=False)
+
+    os.unlink(cool_outfile)
+
+
+def test_save_cool_enforce_integer():
+    cool_outfile = outfile + '.cool'
+
+    # create matrixFileHandler instance with filetype 'cool'
+    pMatrixFile = ROOT + 'Li_et_al_2015.cool'
+    fh = MatrixFileHandler(pFileType='cool', pMatrixFile=pMatrixFile, pEnforceInteger=True)
+    assert fh is not None
+
+    # load data
+    matrix, cut_intervals, nan_bins, distance_counts, correction_factors = fh.load()
+    
+    # set matrix variables
+    fh.set_matrix_variables(matrix, cut_intervals, nan_bins, correction_factors, distance_counts)
+    # and save it.
+    fh.save(pName=cool_outfile, pSymmetric=False, pApplyCorrection=False)
+
+    os.unlink(cool_outfile)
+
+
+def test_save_cool_apply_division_none_correction():
+    cool_outfile = outfile + '.cool'
+
+    # create matrixFileHandler instance with filetype 'cool'
+    pMatrixFile = ROOT + 'Li_et_al_2015.cool'
+    fh = MatrixFileHandler(pFileType='cool', pMatrixFile=pMatrixFile, pCorrectionOperator='/')
+    assert fh is not None
+
+    # load data
+    matrix, cut_intervals, nan_bins, distance_counts, correction_factors = fh.load()
+    # print(correction_factors)
+    # set matrix variables
+    fh.set_matrix_variables(matrix, cut_intervals, nan_bins, None, distance_counts)
+    # and save it.
+    fh.save(pName=cool_outfile, pSymmetric=False, pApplyCorrection=False)
+
+    os.unlink(cool_outfile)
+
+def test_save_cool_apply_division():
+    cool_outfile = outfile + '.cool'
+
+    # create matrixFileHandler instance with filetype 'cool'
+    pMatrixFile = ROOT + 'Li_et_al_2015.cool'
+    fh = MatrixFileHandler(pFileType='cool', pMatrixFile=pMatrixFile, pCorrectionOperator='/')
+    assert fh is not None
+
+    # load data
+    matrix, cut_intervals, nan_bins, distance_counts, correction_factors = fh.load()
+    # print(correction_factors)
+    # set matrix variables
+    fh.set_matrix_variables(matrix, cut_intervals, nan_bins, correction_factors, distance_counts)
+    # and save it.
+    fh.save(pName=cool_outfile, pSymmetric=False, pApplyCorrection=False)
+
+    os.unlink(cool_outfile)
+    
 def test_load_ginteractions():
     pass
 
