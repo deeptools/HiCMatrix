@@ -30,9 +30,12 @@ class H5(MatrixFile, object):
 
         with tables.open_file(self.matrixFileName) as f:
             parts = {}
-            for matrix_part in ('data', 'indices', 'indptr', 'shape'):
-                parts[matrix_part] = getattr(f.root.matrix, matrix_part).read()
-
+            try:
+                for matrix_part in ('data', 'indices', 'indptr', 'shape'):
+                    parts[matrix_part] = getattr(f.root.matrix, matrix_part).read()
+            except Exception:
+                log.info('No h5 file. Please check parameters concerning the file type!')
+                exit(1)
             matrix = csr_matrix(tuple([parts['data'], parts['indices'], parts['indptr']]),
                                 shape=parts['shape'])
             # matrix = hiCMatrix.fillLowerTriangle(matrix)

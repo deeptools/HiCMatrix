@@ -18,7 +18,7 @@ class Cool(MatrixFile, object):
         self.chrnameList = None
         self.correctionFactorTable = 'weight'
         self.correctionOperator = '*'
-        self.enforceInteger = True
+        self.enforceInteger = False
 
     def getInformationCoolerBinNames(self):
         return cooler.Cooler(self.matrixFileName).bins().columns.values
@@ -91,7 +91,6 @@ class Cool(MatrixFile, object):
             cut_intervals_data_frame = cooler_file.bins()[['chrom', 'start', 'end']][:]
 
         correction_factors = None
-        # log.debug("{} {}".format(correction_factors_data_frame, pApplyCorrection))
 
         if correction_factors_data_frame is not None and pApplyCorrection:
             log.debug("Apply correction factors")
@@ -136,25 +135,13 @@ class Cool(MatrixFile, object):
 
         distance_counts = None
 
-        # matrix = hiCMatrix.fillLowerTriangle(matrix)
-
         return matrix, cut_intervals, nan_bins, distance_counts, correction_factors
-
-    # def set_matrix_variables(self, pMatrix, pCutIntervals, pNanBins, pCorrectionFactors, pDistanceCounts):
-    #     super().set_matrix_variables(pMatrix, pCutIntervals, pNanBins, pCorrectionFactors, pDistanceCounts)
-
-    # def __create_empty_cool_file(self, pFileName):
-    #     bins_data_frame = pd.DataFrame(columns=['chrom', 'start', 'end', 'weight'])
-    #     matrix_data_frame = pd.DataFrame(columns=['bin1_id', 'bin2_id', 'count'])
-    #     cooler.io.create(cool_uri=pFileName,
-    #                      bins=bins_data_frame,
-    #                      pixels=matrix_data_frame)
 
     def save(self, pFileName, pSymmetric=True, pApplyCorrection=True):
         log.debug('Save in cool format')
 
         self.matrix.eliminate_zeros()
-        if self.nan_bins is not None:
+        if self.nan_bins is not None and len(self.nan_bins) > 0:
             # remove nan_bins by multipling them with 0 to set them to 0.
             correction_factors = np.ones(self.matrix.shape[0])
             correction_factors[self.nan_bins] = 0
@@ -167,14 +154,16 @@ class Cool(MatrixFile, object):
 
         # set possible nans in data to 0
         self.matrix.data[np.argwhere(np.isnan(self.matrix.data))] = 0
+        self.matrix.eliminate_zeros()
 
         # save only the upper triangle of the
         if pSymmetric:
             # symmetric matrix
             self.matrix = triu(self.matrix, format='csr')
-            # log.debug('Symmetric {}'.format(pSymmetric))
         else:
             self.matrix = self.matrix
+
+        self.matrix.eliminate_zeros()
 
         # create data frame for bins
         # self.cut_intervals is having 4 tuples, bin_data_frame should have 3.correction_factors
@@ -184,7 +173,7 @@ class Cool(MatrixFile, object):
 
         if self.correction_factors is not None and pApplyCorrection:
             weight = convertNansToOnes(np.array(self.correction_factors).flatten())
-            self.correctionFactorTable
+            # self.correctionFactorTable
             bins_data_frame = bins_data_frame.assign(weight=weight)
 
         # get only the upper triangle of the matrix to save to disk
@@ -195,6 +184,7 @@ class Cool(MatrixFile, object):
 
         # revert correction to store orginal matrix
         if self.correction_factors is not None and pApplyCorrection:
+
             log.info("Reverting correction factors on matrix...")
             instances, features = self.matrix.nonzero()
             self.correction_factors = np.array(self.correction_factors)
@@ -219,29 +209,27 @@ class Cool(MatrixFile, object):
                 self.matrix.data = np.rint(self.matrix.data)
                 self.matrix.data = self.matrix.data.astype(int)
 
-            data = self.matrix.data.tolist()
+        instances, features = self.matrix.nonzero()
 
-        else:
+        matrix_data_frame = pd.DataFrame(instances, columns=['bin1_id'], dtype=np.int32)
+        del instances
+        matrix_data_frame = matrix_data_frame.assign(bin2_id=features)
+        del features
 
-            instances, features = self.matrix.nonzero()
-            data = self.matrix.data.tolist()
-
-            if self.enforceInteger:
-                cooler._writer.COUNT_DTYPE = np.int32
-                data = np.rint(data)
-            elif self.matrix.dtype not in [np.int32, int]:
-                log.warning("Writing non-standard cooler matrix. Datatype of matrix['count'] is: {}".format(self.matrix.dtype))
-                cooler._writer.COUNT_DTYPE = self.matrix.dtype
-
-        if len(instances) == 0 and len(features) == 0:
-            exit('No data present. Exit.')
-        else:
-            matrix_tuple_list = np.stack((instances.tolist(), features.tolist()), axis=-1)
-            matrix_data_frame = pd.DataFrame(matrix_tuple_list, columns=['bin1_id', 'bin2_id'], dtype=np.int32)
-
+        if self.enforceInteger:
+            cooler._writer.COUNT_DTYPE = np.int32
+            data = np.rint(self.matrix.data)
             matrix_data_frame = matrix_data_frame.assign(count=data)
+        else:
+            matrix_data_frame = matrix_data_frame.assign(count=self.matrix.data)
 
-            cooler.io.create(cool_uri=pFileName,
-                             bins=bins_data_frame,
-                             pixels=matrix_data_frame,
-                             append=False)
+        if self.matrix.dtype not in [np.int32, int]:
+            log.warning("Writing non-standard cooler matrix. Datatype of matrix['count'] is: {}".format(self.matrix.dtype))
+            cooler._writer.COUNT_DTYPE = self.matrix.dtype
+        split_factor = 1
+        if len(self.matrix.data) > 1e6:
+            split_factor = 1e4
+        cooler.io.create(cool_uri=pFileName,
+                         bins=bins_data_frame,
+                         pixels=np.array_split(matrix_data_frame, split_factor),
+                         append=False)
