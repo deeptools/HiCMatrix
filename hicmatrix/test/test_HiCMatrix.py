@@ -24,6 +24,57 @@ warnings.filterwarnings("ignore")
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_data/")
 
+def test_load_h5_save_and_load_cool():
+    hic = hm.hiCMatrix(ROOT + 'Li_et_al_2015.h5')
+
+    outfile = NamedTemporaryFile(suffix='.cool', prefix='hicexplorer_test')
+    hic.matrixFileHandler = None
+    hic.save(pMatrixName=outfile.name)
+
+    hic_cool = hm.hiCMatrix(outfile.name)
+
+    nt.assert_equal(hic_cool.matrix.data, hic.matrix.data)
+    chrom_cool, start_cool, end_cool, _ = zip(*hic_cool.cut_intervals)
+    chrom, start, end, _ = zip(*hic_cool.cut_intervals)
+
+    nt.assert_equal(chrom_cool, chrom)
+    nt.assert_equal(start_cool, start)
+    nt.assert_equal(end_cool, end)
+
+def test_load_h5_save_and_load_cool_2():
+    hic = hm.hiCMatrix(ROOT + 'small_test_matrix.h5')
+
+    outfile = NamedTemporaryFile(suffix='.cool', prefix='hicexplorer_test')
+    hic.matrixFileHandler = None
+    hic.save(pMatrixName=outfile.name)
+
+    hic_cool = hm.hiCMatrix(outfile.name)
+
+  
+    nt.assert_equal(hic_cool.matrix.data, hic.matrix.data)
+    chrom_cool, start_cool, end_cool, _ = zip(*hic_cool.cut_intervals)
+    chrom, start, end, _ = zip(*hic_cool.cut_intervals)
+
+    nt.assert_equal(chrom_cool, chrom)
+    nt.assert_equal(start_cool, start)
+    nt.assert_equal(end_cool, end)
+
+def test_load_cool_save_and_load_h5():
+    hic = hm.hiCMatrix(ROOT + 'Li_et_al_2015.cool')
+
+    outfile = NamedTemporaryFile(suffix='.h5', prefix='hicexplorer_test')
+    hic.matrixFileHandler = None
+    hic.save(pMatrixName=outfile.name)
+
+    hic_cool = hm.hiCMatrix(outfile.name)
+
+    nt.assert_equal(hic_cool.matrix.data, hic.matrix.data)
+    chrom_cool, start_cool, end_cool, _ = zip(*hic_cool.cut_intervals)
+    chrom, start, end, _ = zip(*hic_cool.cut_intervals)
+
+    nt.assert_equal(chrom_cool, chrom)
+    nt.assert_equal(start_cool, start)
+    nt.assert_equal(end_cool, end)
 
 def test_save_load_cool():
     outfile = '/tmp/matrix.cool'

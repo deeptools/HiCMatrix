@@ -19,6 +19,7 @@ class Cool(MatrixFile, object):
         self.correctionFactorTable = 'weight'
         self.correctionOperator = '*'
         self.enforceInteger = False
+        self.appendData = False
 
     def getInformationCoolerBinNames(self):
         return cooler.Cooler(self.matrixFileName).bins().columns.values
@@ -43,7 +44,10 @@ class Cool(MatrixFile, object):
             used_dtype = np.int32
             if np.iinfo(np.int32).max < cooler_file.info['nbins']:
                 used_dtype = np.int64
-            data = np.empty(cooler_file.info['nnz'], dtype=used_dtype)
+            count_dtype = matrixDataFrame[0]['count'].dtype
+            log.debug('used_dtype {}'.format(used_dtype))
+            log.debug('count: {}'.format(count_dtype))
+            data = np.empty(cooler_file.info['nnz'], dtype=count_dtype)
             instances = np.empty(cooler_file.info['nnz'], dtype=used_dtype)
             features = np.empty(cooler_file.info['nnz'], dtype=used_dtype)
             i = 0
@@ -52,15 +56,17 @@ class Cool(MatrixFile, object):
                 size = 1
             start_pos = 0
             while i < cooler_file.info['nbins']:
-                csr_data = matrixDataFrame[i:i + size].values.astype(used_dtype).T
-                lenght_data = len(csr_data[0])
-                data[start_pos:start_pos + lenght_data] = csr_data[2]
-                instances[start_pos:start_pos + lenght_data] = csr_data[0]
-                features[start_pos:start_pos + lenght_data] = csr_data[1]
-                start_pos += lenght_data
-                del csr_data
+                _data = matrixDataFrame[i:i + size]['count'].values.astype(count_dtype).T
+                _instances = matrixDataFrame[i:i + size]['bin1_id'].values.astype(used_dtype).T
+                _features = matrixDataFrame[i:i + size]['bin2_id'].values.astype(used_dtype).T
+
+                data[start_pos:start_pos + len(_data)] = _data
+                instances[start_pos:start_pos + len(_instances)] = _instances
+                features[start_pos:start_pos + len(_features)] = _features
+                start_pos += len(_features)
                 i += size
-            matrix = csr_matrix((data, (instances, features)), shape=(cooler_file.info['nbins'], cooler_file.info['nbins']), dtype=used_dtype)
+            log.debug('sum of data: {}'.format(np.sum(data)))
+            matrix = csr_matrix((data, (instances, features)), shape=(cooler_file.info['nbins'], cooler_file.info['nbins']), dtype=count_dtype)
             del data
             del instances
             del features
@@ -139,6 +145,7 @@ class Cool(MatrixFile, object):
 
     def save(self, pFileName, pSymmetric=True, pApplyCorrection=True):
         log.debug('Save in cool format')
+        log.debug('start save!!!! sum of data column  csr matrix {}'.format(self.matrix.data.sum()))
 
         self.matrix.eliminate_zeros()
         if self.nan_bins is not None and len(self.nan_bins) > 0:
@@ -171,9 +178,11 @@ class Cool(MatrixFile, object):
         # instead of handling this before.
         bins_data_frame = pd.DataFrame(self.cut_intervals, columns=['chrom', 'start', 'end', 'interactions']).drop('interactions', axis=1)
 
+        dtype_pixel = {'bin1_id': np.int32, 'bin2_id':np.int32, 'count':np.int32}
+
         if self.correction_factors is not None and pApplyCorrection:
+            dtype_pixel['weight'] = np.float32
             weight = convertNansToOnes(np.array(self.correction_factors).flatten())
-            # self.correctionFactorTable
             bins_data_frame = bins_data_frame.assign(weight=weight)
 
         # get only the upper triangle of the matrix to save to disk
@@ -181,6 +190,8 @@ class Cool(MatrixFile, object):
         # create a tuple list and use it to create a data frame
 
         # save correction factors and original matrix
+        log.debug('self.correction_factors {}'.format(self.correction_factors))
+        log.debug('pApplyCorrection {}'.format(pApplyCorrection))
 
         # revert correction to store orginal matrix
         if self.correction_factors is not None and pApplyCorrection:
@@ -216,20 +227,24 @@ class Cool(MatrixFile, object):
         matrix_data_frame = matrix_data_frame.assign(bin2_id=features)
         del features
 
+        log.debug('self.enforceInteger {}'.format(self.enforceInteger))
         if self.enforceInteger:
-            cooler._writer.COUNT_DTYPE = np.int32
+            dtype_pixel['count'] = np.int32
             data = np.rint(self.matrix.data)
             matrix_data_frame = matrix_data_frame.assign(count=data)
         else:
             matrix_data_frame = matrix_data_frame.assign(count=self.matrix.data)
 
-        if self.matrix.dtype not in [np.int32, int]:
+        if not self.enforceInteger and self.matrix.dtype not in [np.int32, int]:
             log.warning("Writing non-standard cooler matrix. Datatype of matrix['count'] is: {}".format(self.matrix.dtype))
-            cooler._writer.COUNT_DTYPE = self.matrix.dtype
+            dtype_pixel['count'] = self.matrix.dtype
         split_factor = 1
-        if len(self.matrix.data) > 1e6:
+        if len(self.matrix.data) > 1e7:
             split_factor = 1e4
+            matrix_data_frame = np.array_split(matrix_data_frame, split_factor)
+
         cooler.io.create(cool_uri=pFileName,
                          bins=bins_data_frame,
-                         pixels=np.array_split(matrix_data_frame, split_factor),
-                         append=False)
+                         pixels=matrix_data_frame,
+                         append=self.appendData,
+                         dtype=dtype_pixel)
