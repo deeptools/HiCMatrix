@@ -17,6 +17,7 @@ warnings.filterwarnings(action="ignore", message="numpy.dtype size changed")
 warnings.filterwarnings(action="ignore", message="numpy.ndarray size changed")
 warnings.simplefilter(action='ignore', category=DeprecationWarning)
 warnings.simplefilter(action='ignore', category=ImportWarning)
+warnings.simplefilter(action='ignore', category=PendingDeprecationWarning)
 # warnings.simplefilter(action='ignore', category=tables.exceptions.FlavorWarning)
 
 import numpy as np
