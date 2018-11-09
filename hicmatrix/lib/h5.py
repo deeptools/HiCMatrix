@@ -114,6 +114,8 @@ class H5(MatrixFile, object):
             matrix = triu(self.matrix, k=0, format='csr')
         else:
             matrix = self.matrix
+        matrix.eliminate_zeros()
+
         filters = tables.Filters(complevel=5, complib='blosc')
         with tables.open_file(filename, mode="w", title="HiCExplorer matrix") as h5file:
             matrix_group = h5file.create_group("/", "matrix", )

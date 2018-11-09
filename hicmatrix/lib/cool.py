@@ -20,6 +20,7 @@ class Cool(MatrixFile, object):
         self.correctionOperator = '*'
         self.enforceInteger = False
         self.appendData = False
+        self.fileWasH5 = False
 
     def getInformationCoolerBinNames(self):
         return cooler.Cooler(self.matrixFileName).bins().columns.values
@@ -66,10 +67,12 @@ class Cool(MatrixFile, object):
                 start_pos += len(_features)
                 i += size
             log.debug('sum of data: {}'.format(np.sum(data)))
+            log.debug('len of data: {}'.format(len(data)))
+
             matrix = csr_matrix((data, (instances, features)), shape=(cooler_file.info['nbins'], cooler_file.info['nbins']), dtype=count_dtype)
-            del data
-            del instances
-            del features
+            # del data
+            # del instances
+            # del features
         else:
             if len(self.chrnameList) == 1:
                 try:
@@ -108,6 +111,8 @@ class Cool(MatrixFile, object):
             correction_factors = convertNansToOnes(np.array(correction_factors_data_frame.values).flatten())
             # apply only if there are not only 1's
             if np.sum(correction_factors) != len(correction_factors):
+                self.matrix.sort_indices()
+
                 instances, features = matrix.nonzero()
                 instances_factors = correction_factors[instances]
                 features_factors = correction_factors[features]
@@ -126,15 +131,8 @@ class Cool(MatrixFile, object):
         # try to restore nan_bins.
         try:
             shape = matrix.shape[0] if matrix.shape[0] < matrix.shape[1] else matrix.shape[1]
-            nan_bins = np.array(range(shape))
-            nan_bins = np.setxor1d(nan_bins, matrix.indices)
-
-            i = 0
-            while i < len(nan_bins):
-                if nan_bins[i] >= shape:
-                    break
-                i += 1
-            nan_bins = nan_bins[:i]
+            nan_bins = np.arange(shape)
+            nan_bins = np.setdiff1d(nan_bins, matrix.indices[:-1])
 
         except Exception:
             nan_bins = None
@@ -145,24 +143,31 @@ class Cool(MatrixFile, object):
 
     def save(self, pFileName, pSymmetric=True, pApplyCorrection=True):
         log.debug('Save in cool format')
-        log.debug('start save!!!! sum of data column  csr matrix {}'.format(self.matrix.data.sum()))
 
         self.matrix.eliminate_zeros()
-        if self.nan_bins is not None and len(self.nan_bins) > 0:
-            # remove nan_bins by multipling them with 0 to set them to 0.
+
+        if self.nan_bins is not None and len(self.nan_bins) > 0 and self.fileWasH5:
+            # remove nan_bins
             correction_factors = np.ones(self.matrix.shape[0])
             correction_factors[self.nan_bins] = 0
+            self.matrix.sort_indices()
             _instances, _features = self.matrix.nonzero()
+
             instances_factors = correction_factors[_instances]
             features_factors = correction_factors[_features]
-            instances_factors *= features_factors
-            self.matrix.data = self.matrix.data.astype(float)
-            self.matrix.data *= instances_factors
+
+            instances_factors = np.logical_not(np.logical_or(instances_factors, features_factors))
+            # self.matrix.data = self.matrix.data.astype(float)
+            self.matrix.data[instances_factors] = 0
+
+            self.matrix.eliminate_zeros()
 
         # set possible nans in data to 0
-        self.matrix.data[np.argwhere(np.isnan(self.matrix.data))] = 0
-        self.matrix.eliminate_zeros()
+        mask = np.isnan(self.matrix.data)
 
+        self.matrix.data[mask] = 0
+        # self.matrix.data[np.argwhere(np.isnan(self.matrix.data))] = 0
+        self.matrix.eliminate_zeros()
         # save only the upper triangle of the
         if pSymmetric:
             # symmetric matrix
@@ -178,7 +183,7 @@ class Cool(MatrixFile, object):
         # instead of handling this before.
         bins_data_frame = pd.DataFrame(self.cut_intervals, columns=['chrom', 'start', 'end', 'interactions']).drop('interactions', axis=1)
 
-        dtype_pixel = {'bin1_id': np.int32, 'bin2_id':np.int32, 'count':np.int32}
+        dtype_pixel = {'bin1_id': np.int32, 'bin2_id': np.int32, 'count': np.int32}
 
         if self.correction_factors is not None and pApplyCorrection:
             dtype_pixel['weight'] = np.float32
@@ -190,8 +195,6 @@ class Cool(MatrixFile, object):
         # create a tuple list and use it to create a data frame
 
         # save correction factors and original matrix
-        log.debug('self.correction_factors {}'.format(self.correction_factors))
-        log.debug('pApplyCorrection {}'.format(pApplyCorrection))
 
         # revert correction to store orginal matrix
         if self.correction_factors is not None and pApplyCorrection:
@@ -227,7 +230,6 @@ class Cool(MatrixFile, object):
         matrix_data_frame = matrix_data_frame.assign(bin2_id=features)
         del features
 
-        log.debug('self.enforceInteger {}'.format(self.enforceInteger))
         if self.enforceInteger:
             dtype_pixel['count'] = np.int32
             data = np.rint(self.matrix.data)
