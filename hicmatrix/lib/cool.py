@@ -19,17 +19,18 @@ class Cool(MatrixFile, object):
         self.correctionFactorTable = 'weight'
         self.correctionOperator = '*'
         self.enforceInteger = False
+        self.appendData = False
+        self.fileWasH5 = False
+        self.applyCorrectionLoad = True
 
     def getInformationCoolerBinNames(self):
         return cooler.Cooler(self.matrixFileName).bins().columns.values
 
-    def load(self, pApplyCorrection=None, pMatrixOnly=None):
+    def load(self):
         log.debug('Load in cool format')
-        log.debug('self.chrnameList {}'.format(self.chrnameList))
         if self.matrixFileName is None:
             log.info('No matrix is initalized')
-        if pApplyCorrection is None:
-            pApplyCorrection = True
+
         try:
             cooler_file = cooler.Cooler(self.matrixFileName)
         except Exception:
@@ -43,7 +44,8 @@ class Cool(MatrixFile, object):
             used_dtype = np.int32
             if np.iinfo(np.int32).max < cooler_file.info['nbins']:
                 used_dtype = np.int64
-            data = np.empty(cooler_file.info['nnz'], dtype=used_dtype)
+            count_dtype = matrixDataFrame[0]['count'].dtype
+            data = np.empty(cooler_file.info['nnz'], dtype=count_dtype)
             instances = np.empty(cooler_file.info['nnz'], dtype=used_dtype)
             features = np.empty(cooler_file.info['nnz'], dtype=used_dtype)
             i = 0
@@ -52,18 +54,20 @@ class Cool(MatrixFile, object):
                 size = 1
             start_pos = 0
             while i < cooler_file.info['nbins']:
-                csr_data = matrixDataFrame[i:i + size].values.astype(used_dtype).T
-                lenght_data = len(csr_data[0])
-                data[start_pos:start_pos + lenght_data] = csr_data[2]
-                instances[start_pos:start_pos + lenght_data] = csr_data[0]
-                features[start_pos:start_pos + lenght_data] = csr_data[1]
-                start_pos += lenght_data
-                del csr_data
+                _data = matrixDataFrame[i:i + size]['count'].values.astype(count_dtype).T
+                _instances = matrixDataFrame[i:i + size]['bin1_id'].values.astype(used_dtype).T
+                _features = matrixDataFrame[i:i + size]['bin2_id'].values.astype(used_dtype).T
+
+                data[start_pos:start_pos + len(_data)] = _data
+                instances[start_pos:start_pos + len(_instances)] = _instances
+                features[start_pos:start_pos + len(_features)] = _features
+                start_pos += len(_features)
                 i += size
-            matrix = csr_matrix((data, (instances, features)), shape=(cooler_file.info['nbins'], cooler_file.info['nbins']), dtype=used_dtype)
-            del data
-            del instances
-            del features
+
+            matrix = csr_matrix((data, (instances, features)), shape=(cooler_file.info['nbins'], cooler_file.info['nbins']), dtype=count_dtype)
+            # del data
+            # del instances
+            # del features
         else:
             if len(self.chrnameList) == 1:
                 try:
@@ -85,15 +89,13 @@ class Cool(MatrixFile, object):
             else:
                 exit("Operation to load more than one chr from bins is not supported.")
         else:
-            if pApplyCorrection and self.correctionFactorTable in cooler_file.bins():
+            if self.applyCorrectionLoad and self.correctionFactorTable in cooler_file.bins():
                 correction_factors_data_frame = cooler_file.bins()[[self.correctionFactorTable]][:]
 
             cut_intervals_data_frame = cooler_file.bins()[['chrom', 'start', 'end']][:]
 
         correction_factors = None
-
-        if correction_factors_data_frame is not None and pApplyCorrection:
-            log.debug("Apply correction factors")
+        if correction_factors_data_frame is not None and self.applyCorrectionLoad:
             # apply correction factors to matrix
             # a_i,j = a_i,j * c_i *c_j
             matrix.eliminate_zeros()
@@ -102,11 +104,13 @@ class Cool(MatrixFile, object):
             correction_factors = convertNansToOnes(np.array(correction_factors_data_frame.values).flatten())
             # apply only if there are not only 1's
             if np.sum(correction_factors) != len(correction_factors):
+                matrix.sort_indices()
+
                 instances, features = matrix.nonzero()
                 instances_factors = correction_factors[instances]
                 features_factors = correction_factors[features]
                 instances_factors *= features_factors
-
+                log.debug('Apply {}'.format(self.correctionOperator))
                 if self.correctionOperator == '*':
                     matrix.data *= instances_factors
                 elif self.correctionOperator == '/':
@@ -120,15 +124,8 @@ class Cool(MatrixFile, object):
         # try to restore nan_bins.
         try:
             shape = matrix.shape[0] if matrix.shape[0] < matrix.shape[1] else matrix.shape[1]
-            nan_bins = np.array(range(shape))
-            nan_bins = np.setxor1d(nan_bins, matrix.indices)
-
-            i = 0
-            while i < len(nan_bins):
-                if nan_bins[i] >= shape:
-                    break
-                i += 1
-            nan_bins = nan_bins[:i]
+            nan_bins = np.arange(shape)
+            nan_bins = np.setdiff1d(nan_bins, matrix.indices[:-1])
 
         except Exception:
             nan_bins = None
@@ -141,21 +138,26 @@ class Cool(MatrixFile, object):
         log.debug('Save in cool format')
 
         self.matrix.eliminate_zeros()
-        if self.nan_bins is not None and len(self.nan_bins) > 0:
-            # remove nan_bins by multipling them with 0 to set them to 0.
+
+        if self.nan_bins is not None and len(self.nan_bins) > 0 and self.fileWasH5:
+            # remove nan_bins
             correction_factors = np.ones(self.matrix.shape[0])
             correction_factors[self.nan_bins] = 0
+            self.matrix.sort_indices()
             _instances, _features = self.matrix.nonzero()
+
             instances_factors = correction_factors[_instances]
             features_factors = correction_factors[_features]
-            instances_factors *= features_factors
-            self.matrix.data = self.matrix.data.astype(float)
-            self.matrix.data *= instances_factors
+
+            instances_factors = np.logical_not(np.logical_or(instances_factors, features_factors))
+            self.matrix.data[instances_factors] = 0
+            self.matrix.eliminate_zeros()
 
         # set possible nans in data to 0
-        self.matrix.data[np.argwhere(np.isnan(self.matrix.data))] = 0
-        self.matrix.eliminate_zeros()
+        mask = np.isnan(self.matrix.data)
 
+        self.matrix.data[mask] = 0
+        self.matrix.eliminate_zeros()
         # save only the upper triangle of the
         if pSymmetric:
             # symmetric matrix
@@ -170,44 +172,41 @@ class Cool(MatrixFile, object):
         # it looks like it is faster to create it with 4, and drop the last one
         # instead of handling this before.
         bins_data_frame = pd.DataFrame(self.cut_intervals, columns=['chrom', 'start', 'end', 'interactions']).drop('interactions', axis=1)
+        dtype_pixel = {'bin1_id': np.int32, 'bin2_id': np.int32, 'count': np.int32}
 
         if self.correction_factors is not None and pApplyCorrection:
+            dtype_pixel['weight'] = np.float32
+            if self.fileWasH5:
+                self.correction_factors = np.array(self.correction_factors).flatten()
+                self.correction_factors = 1 / self.correction_factors
+                mask = np.isnan(self.correction_factors)
+                self.correction_factors[mask] = 0
+                mask = np.isinf(self.correction_factors)
+                self.correction_factors[mask] = 0
             weight = convertNansToOnes(np.array(self.correction_factors).flatten())
-            # self.correctionFactorTable
             bins_data_frame = bins_data_frame.assign(weight=weight)
-
-        # get only the upper triangle of the matrix to save to disk
-        # upper_triangle = triu(self.matrix, k=0, format='csr')
-        # create a tuple list and use it to create a data frame
-
-        # save correction factors and original matrix
-
-        # revert correction to store orginal matrix
-        if self.correction_factors is not None and pApplyCorrection:
 
             log.info("Reverting correction factors on matrix...")
             instances, features = self.matrix.nonzero()
             self.correction_factors = np.array(self.correction_factors)
 
             # do not apply if correction factors are just 1's
-            if np.sum(self.correction_factors) != len(self.correction_factors):
-                instances_factors = self.correction_factors[instances]
-                features_factors = self.correction_factors[features]
+            instances_factors = self.correction_factors[instances]
+            features_factors = self.correction_factors[features]
 
-                instances_factors *= features_factors
-                self.matrix.data = self.matrix.data.astype(float)
+            instances_factors *= features_factors
+            self.matrix.data = self.matrix.data.astype(float)
 
-                # Apply the invert operation to get the original data
-                if self.correctionOperator == '*':
-                    self.matrix.data /= instances_factors
-                elif self.correctionOperator == '/':
-                    self.matrix.data *= instances_factors
+            # Apply the invert operation to get the original data
+            if self.correctionOperator == '*':
+                self.matrix.data /= instances_factors
+            elif self.correctionOperator == '/':
+                self.matrix.data *= instances_factors
 
-                instances_factors = None
-                features_factors = None
+            instances_factors = None
+            features_factors = None
 
-                self.matrix.data = np.rint(self.matrix.data)
-                self.matrix.data = self.matrix.data.astype(int)
+            self.matrix.eliminate_zeros()
 
         instances, features = self.matrix.nonzero()
 
@@ -217,19 +216,22 @@ class Cool(MatrixFile, object):
         del features
 
         if self.enforceInteger:
-            cooler._writer.COUNT_DTYPE = np.int32
+            dtype_pixel['count'] = np.int32
             data = np.rint(self.matrix.data)
             matrix_data_frame = matrix_data_frame.assign(count=data)
         else:
             matrix_data_frame = matrix_data_frame.assign(count=self.matrix.data)
 
-        if self.matrix.dtype not in [np.int32, int]:
+        if not self.enforceInteger and self.matrix.dtype not in [np.int32, int]:
             log.warning("Writing non-standard cooler matrix. Datatype of matrix['count'] is: {}".format(self.matrix.dtype))
-            cooler._writer.COUNT_DTYPE = self.matrix.dtype
+            dtype_pixel['count'] = self.matrix.dtype
         split_factor = 1
-        if len(self.matrix.data) > 1e6:
+        if len(self.matrix.data) > 1e7:
             split_factor = 1e4
+            matrix_data_frame = np.array_split(matrix_data_frame, split_factor)
+
         cooler.io.create(cool_uri=pFileName,
                          bins=bins_data_frame,
-                         pixels=np.array_split(matrix_data_frame, split_factor),
-                         append=False)
+                         pixels=matrix_data_frame,
+                         append=self.appendData,
+                         dtype=dtype_pixel)

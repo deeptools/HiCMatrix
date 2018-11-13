@@ -17,6 +17,7 @@ warnings.filterwarnings(action="ignore", message="numpy.dtype size changed")
 warnings.filterwarnings(action="ignore", message="numpy.ndarray size changed")
 warnings.simplefilter(action='ignore', category=DeprecationWarning)
 warnings.simplefilter(action='ignore', category=ImportWarning)
+warnings.simplefilter(action='ignore', category=PendingDeprecationWarning)
 # warnings.simplefilter(action='ignore', category=tables.exceptions.FlavorWarning)
 
 import numpy as np
@@ -40,8 +41,7 @@ class hiCMatrix:
     get sub matrices by chrname.
     """
 
-    def __init__(self, pMatrixFile=None, pChrnameList=None,
-                 pApplyCorrectionCooler=None):
+    def __init__(self, pMatrixFile=None, pChrnameList=None):
         self.non_homogeneous_warning_already_printed = False
         self.bin_size = None
         self.bin_size_homogeneous = None  # track if the bins are equally spaced or not
@@ -63,8 +63,7 @@ class hiCMatrix:
             fileType = 'cool'
             if pMatrixFile.endswith('.h5'):
                 fileType = 'h5'
-            self.matrixFileHandler = MatrixFileHandler(pFileType=fileType, pMatrixFile=pMatrixFile, pChrnameList=pChrnameList,
-                                                       pApplyCorrectionCooler=pApplyCorrectionCooler)
+            self.matrixFileHandler = MatrixFileHandler(pFileType=fileType, pMatrixFile=pMatrixFile, pChrnameList=pChrnameList)
             self.matrix, self.cut_intervals, self.nan_bins, \
                 self.correction_factors, self.distance_counts = self.matrixFileHandler.load()
 

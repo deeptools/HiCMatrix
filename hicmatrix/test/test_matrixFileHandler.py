@@ -4,6 +4,8 @@ import os
 import pytest
 from scipy.sparse.csr import csr_matrix
 import numpy as np
+import logging
+log = logging.getLogger(__name__)
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_data/")
 outfile = '/tmp/matrix'
@@ -72,7 +74,7 @@ def test_load_h5(capsys):
 
     assert distance_counts is None
 
-    test_correction_factors = np.array([np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 0.90720049, 1.25516028])  # noqa E501
+    test_correction_factors = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0.90720049, 1.25516028])  # noqa E501
     nt.assert_almost_equal(correction_factors[0:10], test_correction_factors)
 
 
@@ -176,7 +178,7 @@ def test_load_cool(capsys):
     test_nan_bins = [0, 1, 2, 3, 4, 5, 6, 7, 30, 31]
     nt.assert_almost_equal(nan_bins[0:10], test_nan_bins)
 
-    test_correction_factors = [1., 1., 1., 1., 1., 1., 1., 1., 0.90720049, 1.25516028]
+    test_correction_factors = [0., 0., 0., 0., 0., 0., 0., 0., 1.1022922, 0.796711]
     nt.assert_almost_equal(correction_factors[0:10], test_correction_factors)
 
     assert distance_counts is None
@@ -197,80 +199,107 @@ def test_save_cool():
     # and save it.
     fh.save(pName=cool_outfile, pSymmetric=True, pApplyCorrection=True)
 
-    os.unlink(cool_outfile)
+    fh_test = MatrixFileHandler(pFileType='cool', pMatrixFile=cool_outfile)
+    assert fh_test is not None
+    matrix_test, cut_intervals_test, nan_bins_test, distance_counts_test, correction_factors_test = fh_test.load()
 
-
-def test_save_cool_non_symmetric_apply_correction_true():
-    cool_outfile = outfile + '.cool'
-
-    # create matrixFileHandler instance with filetype 'cool'
-    pMatrixFile = ROOT + 'Li_et_al_2015.cool'
-    fh = MatrixFileHandler(pFileType='cool', pMatrixFile=pMatrixFile)
-    assert fh is not None
-
-    # load data
-    matrix, cut_intervals, nan_bins, distance_counts, correction_factors = fh.load()
-    # set matrix variables
-    fh.set_matrix_variables(matrix, cut_intervals, nan_bins, correction_factors, distance_counts)
-    # and save it.
-    fh.save(pName=cool_outfile, pSymmetric=False, pApplyCorrection=True)
+    nt.assert_equal(matrix.data, matrix_test.data)
+    nt.assert_equal(cut_intervals, cut_intervals_test)
+    nt.assert_equal(nan_bins, nan_bins_test)
+    nt.assert_equal(distance_counts, distance_counts_test)
+    nt.assert_equal(correction_factors, correction_factors_test)
 
     os.unlink(cool_outfile)
 
 
-def test_save_cool_non_symmetric_apply_correction_false():
+def test_load_h5_save_cool():
     cool_outfile = outfile + '.cool'
 
-    # create matrixFileHandler instance with filetype 'cool'
-    pMatrixFile = ROOT + 'Li_et_al_2015.cool'
-    fh = MatrixFileHandler(pFileType='cool', pMatrixFile=pMatrixFile)
+    # create matrixFileHandler instance with filetype 'h5'
+    pMatrixFile = ROOT + 'Li_et_al_2015.h5'
+    fh = MatrixFileHandler(pFileType='h5', pMatrixFile=pMatrixFile)
     assert fh is not None
 
     # load data
     matrix, cut_intervals, nan_bins, distance_counts, correction_factors = fh.load()
-    # set matrix variables
-    fh.set_matrix_variables(matrix, cut_intervals, nan_bins, correction_factors, distance_counts)
-    # and save it.
-    fh.save(pName=cool_outfile, pSymmetric=False, pApplyCorrection=False)
 
+    # set matrix variables
+    fh_new = MatrixFileHandler(pFileType='cool')
+
+    fh_new.set_matrix_variables(matrix, cut_intervals, nan_bins, correction_factors, distance_counts)
+    fh_new.matrixFile.fileWasH5 = True
+    # and save it.
+
+    fh_new.save(pName=cool_outfile, pSymmetric=False, pApplyCorrection=True)
+
+    fh_test = MatrixFileHandler(pFileType='cool', pMatrixFile=cool_outfile)
+    assert fh_test is not None
+    matrix_test, cut_intervals_test, nan_bins_test, distance_counts_test, correction_factors_test = fh_test.load()
+
+    instances, features = matrix.nonzero()
+    instances_factors = correction_factors[instances]
+    features_factors = correction_factors[features]
+    instances_factors *= features_factors
+
+    matrix_applied_correction = matrix.data / instances_factors
+    nt.assert_almost_equal(matrix_applied_correction, matrix_test.data, decimal=1)
+    nt.assert_equal(len(cut_intervals), len(cut_intervals_test))
+    nt.assert_equal(nan_bins, nan_bins_test)
+    nt.assert_equal(distance_counts, distance_counts_test)
+    correction_factors = 1 / correction_factors
+    mask = np.isnan(correction_factors)
+    correction_factors[mask] = 0
+    mask = np.isinf(correction_factors)
+    correction_factors[mask] = 0
+    nt.assert_equal(correction_factors, correction_factors_test)
+
+    # os.unlink(cool_outfile)
     os.unlink(cool_outfile)
 
 
 def test_save_cool_enforce_integer():
     cool_outfile = outfile + '.cool'
 
-    # create matrixFileHandler instance with filetype 'cool'
-    pMatrixFile = ROOT + 'Li_et_al_2015.cool'
-    fh = MatrixFileHandler(pFileType='cool', pMatrixFile=pMatrixFile, pEnforceInteger=True)
+    # create matrixFileHandler instance with filetype 'h5'
+    pMatrixFile = ROOT + 'Li_et_al_2015.h5'
+    fh = MatrixFileHandler(pFileType='h5', pMatrixFile=pMatrixFile)
     assert fh is not None
 
     # load data
     matrix, cut_intervals, nan_bins, distance_counts, correction_factors = fh.load()
 
     # set matrix variables
-    fh.set_matrix_variables(matrix, cut_intervals, nan_bins, correction_factors, distance_counts)
+    fh_new = MatrixFileHandler(pFileType='cool', pEnforceInteger=True)
+
+    fh_new.set_matrix_variables(matrix, cut_intervals, nan_bins, correction_factors, distance_counts)
+    fh_new.matrixFile.fileWasH5 = True
     # and save it.
-    fh.save(pName=cool_outfile, pSymmetric=False, pApplyCorrection=False)
 
-    os.unlink(cool_outfile)
+    fh_new.save(pName=cool_outfile, pSymmetric=False, pApplyCorrection=True)
 
+    fh_test = MatrixFileHandler(pFileType='cool', pMatrixFile=cool_outfile, pApplyCorrectionCoolerLoad=False)
+    assert fh_test is not None
+    matrix_test, cut_intervals_test, nan_bins_test, distance_counts_test, correction_factors_test = fh_test.load()
 
-def test_save_cool_apply_division_none_correction():
-    cool_outfile = outfile + '.cool'
-
-    # create matrixFileHandler instance with filetype 'cool'
-    pMatrixFile = ROOT + 'Li_et_al_2015.cool'
-    fh = MatrixFileHandler(pFileType='cool', pMatrixFile=pMatrixFile, pCorrectionOperator='/')
+    pMatrixFile = ROOT + 'Li_et_al_2015.h5'
+    fh = MatrixFileHandler(pFileType='h5', pMatrixFile=pMatrixFile)
     assert fh is not None
 
     # load data
     matrix, cut_intervals, nan_bins, distance_counts, correction_factors = fh.load()
-    # print(correction_factors)
-    # set matrix variables
-    fh.set_matrix_variables(matrix, cut_intervals, nan_bins, None, distance_counts)
-    # and save it.
-    fh.save(pName=cool_outfile, pSymmetric=False, pApplyCorrection=False)
+    instances, features = matrix.nonzero()
+    instances_factors = correction_factors[instances]
+    features_factors = correction_factors[features]
+    instances_factors *= features_factors
 
+    matrix_applied_correction = matrix.data * instances_factors
+
+    nt.assert_almost_equal(np.rint(matrix_applied_correction), matrix_test.data, decimal=1)
+    nt.assert_equal(len(cut_intervals), len(cut_intervals_test))
+    nt.assert_equal(nan_bins, nan_bins_test)
+    nt.assert_equal(distance_counts, distance_counts_test)
+
+    # os.unlink(cool_outfile)
     os.unlink(cool_outfile)
 
 
@@ -284,11 +313,28 @@ def test_save_cool_apply_division():
 
     # load data
     matrix, cut_intervals, nan_bins, distance_counts, correction_factors = fh.load()
-    # print(correction_factors)
     # set matrix variables
-    fh.set_matrix_variables(matrix, cut_intervals, nan_bins, correction_factors, distance_counts)
+    fh_new = MatrixFileHandler(pFileType='cool', pCorrectionOperator='/')
+
+    fh_new.set_matrix_variables(matrix, cut_intervals, nan_bins, correction_factors, distance_counts)
+
     # and save it.
-    fh.save(pName=cool_outfile, pSymmetric=False, pApplyCorrection=False)
+
+    fh_new.save(pName=cool_outfile, pSymmetric=False, pApplyCorrection=True)
+
+    fh_test = MatrixFileHandler(pFileType='cool', pMatrixFile=cool_outfile, pCorrectionOperator='/')
+    assert fh_test is not None
+    matrix_test, cut_intervals_test, nan_bins_test, distance_counts_test, correction_factors_test = fh_test.load()
+    pMatrixFile = ROOT + 'Li_et_al_2015.cool'
+    fh = MatrixFileHandler(pFileType='cool', pMatrixFile=pMatrixFile, pCorrectionOperator='/')
+    assert fh is not None
+    # load data
+    matrix, cut_intervals, nan_bins, distance_counts, correction_factors = fh.load()
+
+    nt.assert_almost_equal(matrix.data, matrix_test.data, decimal=1)
+    nt.assert_equal(len(cut_intervals), len(cut_intervals_test))
+    nt.assert_equal(nan_bins, nan_bins_test)
+    nt.assert_equal(distance_counts, distance_counts_test)
 
     os.unlink(cool_outfile)
 
