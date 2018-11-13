@@ -69,6 +69,11 @@ class H5(MatrixFile, object):
                     assert len(correction_factors) == matrix.shape[0], \
                         "Error loading matrix. Length of correction factors does not" \
                         "match size of matrix"
+                    correction_factors = np.array(correction_factors)
+                    mask = np.isnan(correction_factors)
+                    correction_factors[mask] = 0
+                    mask = np.isinf(correction_factors)
+                    correction_factors[mask] = 0
                 else:
                     correction_factors = None
             except Exception:
@@ -150,6 +155,8 @@ class H5(MatrixFile, object):
             # save corrections factors
             if self.correction_factors is not None and len(self.correction_factors):
                 self.correction_factors = np.array(self.correction_factors)
+                mask = np.isnan(self.correction_factors)
+                self.correction_factors[mask] = 0
                 atom = tables.Atom.from_dtype(self.correction_factors.dtype)
                 ds = h5file.create_carray(h5file.root, 'correction_factors', atom,
                                           shape=self.correction_factors.shape,

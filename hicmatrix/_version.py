@@ -1,2 +1,2 @@
-__version__ = '4-bugfix'
-# Version number equal to HiCExplorer at the time of split in its own lib
+__version__ = '5'
+# Version number differs from HiCExplorer!
