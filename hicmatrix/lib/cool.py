@@ -36,7 +36,7 @@ class Cool(MatrixFile, object):
         except Exception:
             log.info("Could not open cooler file. Maybe the path is wrong or the given node is not available.")
             log.info('The following file was tried to open: {}'.format(self.matrixFileName))
-            log.info("The following nodes are available: {}".format(cooler.io.ls(self.matrixFileName.split("::")[0])))
+            log.info("The following nodes are available: {}".format(cooler.fileops.list_coolers(self.matrixFileName.split("::")[0])))
             exit()
 
         if self.chrnameList is None:
@@ -54,9 +54,10 @@ class Cool(MatrixFile, object):
                 size = 1
             start_pos = 0
             while i < cooler_file.info['nbins']:
-                _data = matrixDataFrame[i:i + size]['count'].values.astype(count_dtype).T
-                _instances = matrixDataFrame[i:i + size]['bin1_id'].values.astype(used_dtype).T
-                _features = matrixDataFrame[i:i + size]['bin2_id'].values.astype(used_dtype).T
+                matrixDataFrameChunk = matrixDataFrame[i:i + size]
+                _data = matrixDataFrameChunk['count'].values.astype(count_dtype)
+                _instances = matrixDataFrameChunk['bin1_id'].values.astype(used_dtype)
+                _features = matrixDataFrameChunk['bin2_id'].values.astype(used_dtype)
 
                 data[start_pos:start_pos + len(_data)] = _data
                 instances[start_pos:start_pos + len(_instances)] = _instances
@@ -230,8 +231,12 @@ class Cool(MatrixFile, object):
             split_factor = 1e4
             matrix_data_frame = np.array_split(matrix_data_frame, split_factor)
 
-        cooler.io.create(cool_uri=pFileName,
-                         bins=bins_data_frame,
-                         pixels=matrix_data_frame,
-                         append=self.appendData,
-                         dtype=dtype_pixel)
+        if self.appendData:
+            self.appendData = 'a'
+        else:
+            self.appendData = 'w'
+        cooler.create_cooler(cool_uri=pFileName,
+                             bins=bins_data_frame,
+                             pixels=matrix_data_frame,
+                             mode=self.appendData,
+                             dtypes=dtype_pixel)
