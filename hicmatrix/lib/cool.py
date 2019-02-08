@@ -1,3 +1,4 @@
+import os
 import cooler
 import logging
 import numpy as np
@@ -235,8 +236,12 @@ class Cool(MatrixFile, object):
             self.appendData = 'a'
         else:
             self.appendData = 'w'
+        
+        local_temp_dir = os.path.dirname(os.path.realpath(pFileName))
         cooler.create_cooler(cool_uri=pFileName,
                              bins=bins_data_frame,
                              pixels=matrix_data_frame,
                              mode=self.appendData,
-                             dtypes=dtype_pixel)
+                             dtypes=dtype_pixel,
+                             ordered=True,
+                             temp_dir=local_temp_dir)
