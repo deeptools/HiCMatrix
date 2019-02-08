@@ -236,7 +236,7 @@ class Cool(MatrixFile, object):
             self.appendData = 'a'
         else:
             self.appendData = 'w'
-        
+
         local_temp_dir = os.path.dirname(os.path.realpath(pFileName))
         cooler.create_cooler(cool_uri=pFileName,
                              bins=bins_data_frame,
