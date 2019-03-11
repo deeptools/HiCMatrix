@@ -14,6 +14,7 @@ from hicmatrix.utilities import toString
 from hicmatrix.utilities import convertNansToOnes
 from hicmatrix._version import __version__
 
+
 class Cool(MatrixFile, object):
 
     def __init__(self, pMatrixFile=None):
@@ -25,7 +26,7 @@ class Cool(MatrixFile, object):
         self.appendData = False
         self.fileWasH5 = False
         self.applyCorrectionLoad = True
-        self.hic_info = False
+        self.hic_info = {}
         self.hic2cool_version = None
         self.hicmatrix_version = None
 
@@ -117,20 +118,19 @@ class Cool(MatrixFile, object):
                 instances, features = matrix.nonzero()
                 instances_factors = correction_factors[instances]
                 features_factors = correction_factors[features]
-                
 
                 if self.correctionOperator is None:
                     if 'generated-by' in cooler_file.info:
                         generated_by = cooler_file.info['generated-by']
                         if 'hic2cool' in generated_by:
-                            self.hic2cool_version = generated_by.split('-')
-                            if self.hic2cool_version <= '0.5'
+                            self.hic2cool_version = generated_by.split('-')[1]
+                            if self.hic2cool_version <= '0.5':
                                 self.correctionOperator = '*'
                             else:
                                 self.correctionOperator = '/'
                         elif 'hicmatrix' in generated_by:
-                            self.hicmatrix_version = generated_by.split('-')
-                            if self.hicmatrix_version <= '7'
+                            self.hicmatrix_version = generated_by.split('-')[1]
+                            if self.hicmatrix_version <= '7':
                                 self.correctionOperator = '*'
                             else:
                                 self.correctionOperator = '/'
@@ -138,9 +138,9 @@ class Cool(MatrixFile, object):
                         self.correctionOperator = '*'
                 log.debug('Apply {}'.format(self.correctionOperator))
 
-                if self.hic2cool_version is not None and self.hic2cool_version <= '0.5':
+                if self.hic2cool_version is not None and self.hic2cool_version >= '0.5':
                     instances_factors /= features_factors
-                elif self.hicmatrix_version is not None <= '7' self.hicmatrix_version:
+                elif self.hicmatrix_version is not None and self.hicmatrix_version >= '8':
                     instances_factors /= features_factors
                 else:
                     instances_factors *= features_factors
@@ -227,7 +227,13 @@ class Cool(MatrixFile, object):
             instances_factors = self.correction_factors[instances]
             features_factors = self.correction_factors[features]
 
-            instances_factors *= features_factors
+            if self.hic2cool_version is not None and self.hic2cool_version >= '0.5':
+                instances_factors /= features_factors
+            elif self.hicmatrix_version is not None and self.hicmatrix_version >= '8':
+                instances_factors /= features_factors
+            else:
+                instances_factors *= features_factors
+
             self.matrix.data = self.matrix.data.astype(float)
 
             # Apply the invert operation to get the original data
@@ -267,30 +273,38 @@ class Cool(MatrixFile, object):
             self.appendData = 'a'
         else:
             self.appendData = 'w'
-        
-        if self.hic_info is None :
-            if bins_data_frame['start'][2] - bins_data_frame['start'][1] == bins_data_frame['start'][12] - bins_data_frame['start'][11]:
-                # bin_size = bins_data_frame['start'].mean
-                self.hic_info['bin-size'] = bins_data_frame['start'][2] - bins_data_frame['start'][1]
-                self.hic_info['bin-type'] = 'fixed'
-            else:
-                self.hic_info['bin-size'] = None
-                self.hic_info['bin-type'] = 'variable'
-            self.hic_info['creation-date'] = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')
-            self.hic_info['format'] = 'HDF5::Cooler'
-            self.hic_info['format-url'] = 'https://github.com/mirnylab/cooler'
-            self.hic_info['generated-by'] = 'HiCMatrix-' + __version__
-            self.hic_info['generated-by-cooler'] = 'cooler-' + cooler.__version__
 
-            self.hic_info['tool-url'] = 'https://github.com/deeptools/HiCMatrix'
+        if bins_data_frame['start'][2] - bins_data_frame['start'][1] == bins_data_frame['start'][12] - bins_data_frame['start'][11]:
+            # bin_size = bins_data_frame['start'].mean
+            self.hic_info['bin-size'] = int(bins_data_frame['start'][2] - bins_data_frame['start'][1])
+            self.hic_info['bin-type'] = 'fixed'
+        else:
+            self.hic_info['bin-size'] = None
+            self.hic_info['bin-type'] = 'variable'
+        self.hic_info['creation-date'] = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S') + ' UTC'
+        self.hic_info['format'] = 'HDF5::Cooler'
+        self.hic_info['format-url'] = 'https://github.com/mirnylab/cooler'
+        self.hic_info['generated-by'] = 'HiCMatrix-' + __version__
+        self.hic_info['generated-by-cooler-lib'] = 'cooler-' + cooler.__version__
 
-            # self.hic_info['genome-assembly'] = ''
-            # self.hic_info['graphs'] = ''
-            self.hic_info['nbins'] = self.matrix.shape[0]
-            self.hic_info['nchroms'] = bins_data_frame['chrom'][:].nunique()
-            self.hic_info['nnz'] = self.matrix.nnz
+        self.hic_info['tool-url'] = 'https://github.com/deeptools/HiCMatrix'
+
+        # self.hic_info['genome-assembly'] = ''
+        if 'graphs' in self.hic_info:
+            del self.hic_info['graphs']
+        self.hic_info['nbins'] = int(self.matrix.shape[0])
+        self.hic_info['nchroms'] = int(bins_data_frame['chrom'][:].nunique())
+        self.hic_info['chromosomes'] = list(bins_data_frame['chrom'][:].unique())
+        self.hic_info['nnz'] = int(self.matrix.nnz) * 2
+        self.hic_info['min-value'] = int(matrix_data_frame['count'].min())
+        self.hic_info['max-value'] = int(matrix_data_frame['count'].max())
+        self.hic_info['sum-elements'] = int(matrix_data_frame['count'].sum())
+
+        if 'statistics' in self.hic_info:
+            log.debug('statistics {}'.format(self.hic_info['statistics']))
+        else:
+            log.debug('no stats')
             # self.hic_info['statistics'] = ''
-
 
         local_temp_dir = os.path.dirname(os.path.realpath(pFileName))
         cooler.create_cooler(cool_uri=pFileName,
@@ -299,5 +313,5 @@ class Cool(MatrixFile, object):
                              mode=self.appendData,
                              dtypes=dtype_pixel,
                              ordered=True,
-                             metadata=self.hic_info
+                             metadata=self.hic_info,
                              temp_dir=local_temp_dir)
