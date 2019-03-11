@@ -274,9 +274,11 @@ class Cool(MatrixFile, object):
         else:
             self.appendData = 'w'
 
-        if bins_data_frame['start'][2] - bins_data_frame['start'][1] == bins_data_frame['start'][12] - bins_data_frame['start'][11]:
+        if self.hic_info is None:
+            self.hic_info = {}
+        if bins_data_frame['start'][2] % 10 == 0:
             # bin_size = bins_data_frame['start'].mean
-            self.hic_info['bin-size'] = int(bins_data_frame['start'][2] - bins_data_frame['start'][1])
+            self.hic_info['bin-size'] = int(bins_data_frame['start'][1])
             self.hic_info['bin-type'] = 'fixed'
         else:
             self.hic_info['bin-size'] = None
@@ -295,15 +297,15 @@ class Cool(MatrixFile, object):
         self.hic_info['nbins'] = int(self.matrix.shape[0])
         self.hic_info['nchroms'] = int(bins_data_frame['chrom'][:].nunique())
         self.hic_info['chromosomes'] = list(bins_data_frame['chrom'][:].unique())
-        self.hic_info['nnz'] = int(self.matrix.nnz) * 2
+        self.hic_info['nnz'] = int(self.matrix.nnz * 2)
         self.hic_info['min-value'] = int(matrix_data_frame['count'].min())
         self.hic_info['max-value'] = int(matrix_data_frame['count'].max())
         self.hic_info['sum-elements'] = int(matrix_data_frame['count'].sum())
 
-        if 'statistics' in self.hic_info:
-            log.debug('statistics {}'.format(self.hic_info['statistics']))
-        else:
-            log.debug('no stats')
+        # if 'statistics' in self.hic_info:
+        #     log.debug('statistics {}'.format(self.hic_info['statistics']))
+        # else:
+        #     log.debug('no stats')
             # self.hic_info['statistics'] = ''
 
         local_temp_dir = os.path.dirname(os.path.realpath(pFileName))
