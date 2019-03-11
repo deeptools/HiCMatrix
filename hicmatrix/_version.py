@@ -1,2 +1,2 @@
-__version__ = '7'
+__version__ = '8-dev'
 # Version number differs from HiCExplorer!
