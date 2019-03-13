@@ -94,7 +94,7 @@ class hiCMatrix:
         self.matrixFileHandler.set_matrix_variables(self.matrix, self.cut_intervals, self.nan_bins,
                                                     self.correction_factors, self.distance_counts)
         if pMatrixName.endswith('cool'):
-            self.matrixFileHandler.matrixFile.hic_info = pHiCInfo
+            self.matrixFileHandler.matrixFile.hic_metadata = pHiCInfo
 
         if pMatrixName.endswith('cool') or pMatrixName.endswith('h5'):
             self.matrixFileHandler.save(pMatrixName, pSymmetric=pSymmetric, pApplyCorrection=pApplyCorrection)

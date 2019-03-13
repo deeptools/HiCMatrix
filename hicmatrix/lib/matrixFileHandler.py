@@ -35,7 +35,7 @@ class MatrixFileHandler():
                 if pApplyCorrectionCoolerLoad is not None:
                     self.matrixFile.applyCorrectionLoad = pApplyCorrectionCoolerLoad
                 if pHiCInfo is not None:
-                    self.hic_info = pHiCInfo
+                    self.hic_metadata = pHiCInfo
 
     def load(self):
 
