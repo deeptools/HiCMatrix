@@ -2,8 +2,9 @@ import os
 import cooler
 import logging
 log = logging.getLogger(__name__)
-import datetime
+from datetime import datetime
 from copy import deepcopy
+import six
 
 import h5py
 import numpy as np
@@ -42,7 +43,7 @@ class Cool(MatrixFile, object):
     def load(self):
         log.debug('Load in cool format')
         if self.matrixFileName is None:
-            log.info('No matrix is initalized')
+            log.info('No matrix is initialized')
 
         try:
             cooler_file = cooler.Cooler(self.matrixFileName)
@@ -51,6 +52,7 @@ class Cool(MatrixFile, object):
             else:
                 self.hic_metadata = None
             self.cool_info = deepcopy(cooler_file.info)
+            # log.debug("cooler_file.info {}".format(cooler_file.info))
         except Exception:
             log.info("Could not open cooler file. Maybe the path is wrong or the given node is not available.")
             log.info('The following file was tried to open: {}'.format(self.matrixFileName))
@@ -83,7 +85,13 @@ class Cool(MatrixFile, object):
                 start_pos += len(_features)
                 i += size
 
-            matrix = csr_matrix((data, (instances, features)), shape=(cooler_file.info['nbins'], cooler_file.info['nbins']), dtype=count_dtype)
+            # log.debug('max feature {}'.format(np.max(features)))
+            # log.debug('max instance {}'.format(np.max(instances)))
+
+            # log.debug('cooler_file.info[\'nbins\'] {}'.format(cooler_file.info['nbins']))
+            # log.debug('cooler_file.info[\'nbins\'] {}'.format(type(cooler_file.info['nbins'])))
+
+            matrix = csr_matrix((data, (instances, features)), shape=(np.int(cooler_file.info['nbins']), np.int(cooler_file.info['nbins'])), dtype=count_dtype)
             # del data
             # del instances
             # del features
@@ -132,7 +140,7 @@ class Cool(MatrixFile, object):
                 if self.correctionOperator is None:
                     if 'generated-by' in cooler_file.info:
 
-                        generated_by = cooler_file.info['generated-by']
+                        generated_by = cooler_file.info['generated-by'].decode('utf-8')
                         if 'hic2cool' in generated_by:
 
                             self.hic2cool_version = generated_by.split('-')[1]
@@ -150,16 +158,8 @@ class Cool(MatrixFile, object):
                     else:
                         self.correctionOperator = '*'
 
-                # if self.hic2cool_version is not None and self.hic2cool_version >= '0.5':
-                #     instances_factors /= features_factors
-                # elif self.hicmatrix_version is not None and self.hicmatrix_version >= '8':
-                #     instances_factors /= features_factors
-                # else:
+                
                 instances_factors *= features_factors
-                log.debug("self.hic2cool_version {}".format(self.hic2cool_version))
-                log.debug("self.hicmatrix_version {}".format(self.hicmatrix_version))
-                log.debug("self.correctionOperator {}".format(self.correctionOperator))
-
 
                 if self.correctionOperator == '*':
                     matrix.data *= instances_factors
@@ -227,8 +227,8 @@ class Cool(MatrixFile, object):
         if self.correction_factors is not None and pApplyCorrection:
             dtype_pixel['weight'] = np.float32
             if (self.hic2cool_version is not None and self.hic2cool_version <= '0.5') or \
-                (self.hicmatrix_version is not None and self.hicmatrix_version <= '8'):
-                 
+                    (self.hicmatrix_version is not None and self.hicmatrix_version <= '8'):
+
                 log.debug('wash5 true')
                 self.correction_factors = np.array(self.correction_factors).flatten()
                 self.correction_factors = 1 / self.correction_factors
@@ -247,12 +247,8 @@ class Cool(MatrixFile, object):
             instances_factors = self.correction_factors[instances]
             features_factors = self.correction_factors[features]
 
-            if self.hic2cool_version is not None and self.hic2cool_version >= '0.5':
-                instances_factors /= features_factors
-            elif self.hicmatrix_version is not None and self.hicmatrix_version >= '8':
-                instances_factors /= features_factors
-            else:
-                instances_factors *= features_factors
+            
+            instances_factors *= features_factors
 
             self.matrix.data = self.matrix.data.astype(float)
 
@@ -294,11 +290,7 @@ class Cool(MatrixFile, object):
         else:
             self.appendData = 'w'
 
-        if self.cool_info is not None:
-            info = deepcopy(self.cool_info)
-        else:
-            info = {}
-
+        info = {}
         # these fields are created by cooler lib. Can cause errors if not deleted.
         if 'metadata' in info:
             if self.hic_metadata is None:
@@ -309,55 +301,29 @@ class Cool(MatrixFile, object):
         if 'bin-type' in info:
             del info['bin-type']
 
-        # log.debug('302 info {}'.format(info))
-        # if bins_data_frame['start'][2] % 10 == 0:
-        #     # bin_size = bins_data_frame['start'].mean
-        #     info['bin-size'] = int(bins_data_frame['start'][1])
-        #     info['bin-type'] = 'fixed'
-        
-        info['creation-date'] = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S') + ' UTC'
-        # info['format'] = 'HDF5::Cooler'
-        info['format-url'] = 'https://github.com/mirnylab/cooler'
-        info['generated-by'] = 'HiCMatrix-' + __version__
-        info['generated-by-cooler-lib'] = 'cooler-' + cooler.__version__
+        info['format'] = np.string_('HDF5::Cooler')
+        info['format-url'] = np.string_('https://github.com/mirnylab/cooler')
+        info['generated-by'] = np.string_('HiCMatrix-' + __version__)
+        info['generated-by-cooler-lib'] = np.string_('cooler-' + cooler.__version__)
 
-        info['tool-url'] = 'https://github.com/deeptools/HiCMatrix'
+        info['tool-url'] = np.string_('https://github.com/deeptools/HiCMatrix')
 
-        # info['genome-assembly'] = ''
-        
-        # info['nbins'] = int(self.matrix.shape[0])
         # info['nchroms'] = int(bins_data_frame['chrom'][:].nunique())
         # info['chromosomes'] = list(bins_data_frame['chrom'][:].unique())
-        # info['nnz'] = int(self.matrix.nnz * 2)
-        info['min-value'] = int(matrix_data_frame['count'].min())
-        info['max-value'] = int(matrix_data_frame['count'].max())
-        info['sum-elements'] = int(matrix_data_frame['count'].sum())
-
-        
+        info['nnz'] = int(self.matrix.nnz * 2)
+        info['min-value'] = matrix_data_frame['count'].min()
+        info['max-value'] = matrix_data_frame['count'].max()
+        # info['sum-elements'] = int(matrix_data_frame['count'].sum())
 
         if self.hic_metadata is not None and 'matrix-generated-by' in self.hic_metadata:
-            info['matrix-generated-by'] = self.hic_metadata['matrix-generated-by']
+            info['matrix-generated-by'] = np.string_(self.hic_metadata['matrix-generated-by'])
             del self.hic_metadata['matrix-generated-by']
         if self.hic_metadata is not None and 'matrix-generated-by-url' in self.hic_metadata:
-            info['matrix-generated-by-url'] = self.hic_metadata['matrix-generated-by-url']
+            info['matrix-generated-by-url'] = np.string_(self.hic_metadata['matrix-generated-by-url'])
             del self.hic_metadata['matrix-generated-by-url']
-
         if self.hic_metadata is not None and 'genome-assembly' in self.hic_metadata:
-            info['genome-assembly'] = self.hic_metadata['genome-assembly']
+            info['genome-assembly'] = np.string_(self.hic_metadata['genome-assembly'])
             del self.hic_metadata['genome-assembly']
-
-        log.debug('info {}'.format(info))
-        log.debug('self.hic_metadata {}'.format(self.hic_metadata))
-
-        # if 'statistics'  in self.hic_metadata:
-        #     info['metadata'] =  {}
-        #     info['metadata']['statistics'] = self.hic_metadata['statistics']
-
-        # if 'statistics' in info:
-        #     log.debug('statistics {}'.format(info['statistics']))
-        # else:
-        #     log.debug('no stats')
-            # info['statistics'] = ''
 
         local_temp_dir = os.path.dirname(os.path.realpath(pFileName))
         cooler.create_cooler(cool_uri=pFileName,
@@ -369,5 +335,8 @@ class Cool(MatrixFile, object):
                              metadata=self.hic_metadata,
                              temp_dir=local_temp_dir)
 
-        with h5py.File(pFileName, 'r+') as h5file:
-            h5file.attrs.update(info)
+        if self.appendData == 'w':
+            fileName = pFileName.split('::')[0]
+            with h5py.File(fileName, 'r+') as h5file:
+                h5file.attrs.update(info)
+                h5file.close()
