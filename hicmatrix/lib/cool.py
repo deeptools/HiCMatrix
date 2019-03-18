@@ -139,14 +139,17 @@ class Cool(MatrixFile, object):
 
                 if self.correctionOperator is None:
                     if 'generated-by' in cooler_file.info:
-
-                        generated_by = cooler_file.info['generated-by'].decode('utf-8')
+                        log.debug('cooler_file.info[\'generated-by\'] {} {}'.format(cooler_file.info['generated-by'], type(cooler_file.info['generated-by'])))
+                        generated_by = toString(cooler_file.info['generated-by'])
                         if 'hic2cool' in generated_by:
 
                             self.hic2cool_version = generated_by.split('-')[1]
                             if self.hic2cool_version >= '0.5':
+                                log.debug('0.5')
                                 self.correctionOperator = '/'
                             else:
+                                log.debug('0.4')
+
                                 self.correctionOperator = '*'
                         elif 'hicmatrix' in generated_by:
 
@@ -158,7 +161,6 @@ class Cool(MatrixFile, object):
                     else:
                         self.correctionOperator = '*'
 
-                
                 instances_factors *= features_factors
 
                 if self.correctionOperator == '*':
@@ -247,15 +249,17 @@ class Cool(MatrixFile, object):
             instances_factors = self.correction_factors[instances]
             features_factors = self.correction_factors[features]
 
-            
             instances_factors *= features_factors
 
             self.matrix.data = self.matrix.data.astype(float)
 
             # Apply the invert operation to get the original data
+            log.debug('self.correctionOperator: {}'.format(self.correctionOperator))
+            log.debug('self.fileWasH5: {}'.format(self.fileWasH5))
+
             if self.correctionOperator == '*':
                 self.matrix.data /= instances_factors
-            elif self.correctionOperator == '/':
+            elif self.correctionOperator == '/' or self.fileWasH5:
                 self.matrix.data *= instances_factors
 
             instances_factors = None
@@ -310,9 +314,9 @@ class Cool(MatrixFile, object):
 
         # info['nchroms'] = int(bins_data_frame['chrom'][:].nunique())
         # info['chromosomes'] = list(bins_data_frame['chrom'][:].unique())
-        info['nnz'] = int(self.matrix.nnz * 2)
-        info['min-value'] = matrix_data_frame['count'].min()
-        info['max-value'] = matrix_data_frame['count'].max()
+        # info['nnz'] = np.string_(str(self.matrix.nnz * 2))
+        info['min-value'] = np.string_(str(matrix_data_frame['count'].min()))
+        info['max-value'] = np.string_(str(matrix_data_frame['count'].max()))
         # info['sum-elements'] = int(matrix_data_frame['count'].sum())
 
         if self.hic_metadata is not None and 'matrix-generated-by' in self.hic_metadata:
@@ -335,6 +339,7 @@ class Cool(MatrixFile, object):
                              metadata=self.hic_metadata,
                              temp_dir=local_temp_dir)
 
+        log.debug('info {}'.format(info))
         if self.appendData == 'w':
             fileName = pFileName.split('::')[0]
             with h5py.File(fileName, 'r+') as h5file:
