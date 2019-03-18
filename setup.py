@@ -98,7 +98,7 @@ install_requires_py = ["numpy >= 1.13.*",
                        "tables >= 3.4.*",
                        "pandas >= 0.23.*",
                        "future >= 0.16.*",
-                       "cooler == 0.8.2",
+                       "cooler == 0.8.3",
                        "intervaltree == 2.1.*"
                        ]
 
