@@ -228,29 +228,31 @@ def test_load_h5_save_cool():
 
     fh_new.set_matrix_variables(matrix, cut_intervals, nan_bins, correction_factors, distance_counts)
     fh_new.matrixFile.fileWasH5 = True
+    # fh_new.matrixFile.fileWasH5 = True
     # and save it.
 
     fh_new.save(pName=cool_outfile, pSymmetric=False, pApplyCorrection=True)
 
     fh_test = MatrixFileHandler(pFileType='cool', pMatrixFile=cool_outfile)
+
     assert fh_test is not None
     matrix_test, cut_intervals_test, nan_bins_test, distance_counts_test, correction_factors_test = fh_test.load()
 
-    instances, features = matrix.nonzero()
-    instances_factors = correction_factors[instances]
-    features_factors = correction_factors[features]
-    instances_factors *= features_factors
+    # instances, features = matrix.nonzero()
+    # instances_factors = correction_factors[instances]
+    # features_factors = correction_factors[features]
+    # instances_factors *= features_factors
 
-    matrix_applied_correction = matrix.data / instances_factors
-    nt.assert_almost_equal(matrix_applied_correction, matrix_test.data, decimal=1)
+    # matrix_applied_correction = matrix.data * instances_factors
+    nt.assert_almost_equal(matrix.data, matrix_test.data, decimal=1)
     nt.assert_equal(len(cut_intervals), len(cut_intervals_test))
     nt.assert_equal(nan_bins, nan_bins_test)
     nt.assert_equal(distance_counts, distance_counts_test)
-    correction_factors = 1 / correction_factors
-    mask = np.isnan(correction_factors)
-    correction_factors[mask] = 0
-    mask = np.isinf(correction_factors)
-    correction_factors[mask] = 0
+    # correction_factors = 1 / correction_factors
+    # mask = np.isnan(correction_factors)
+    # correction_factors[mask] = 0
+    # mask = np.isinf(correction_factors)
+    # correction_factors[mask] = 0
     nt.assert_equal(correction_factors, correction_factors_test)
 
     # os.unlink(cool_outfile)
@@ -286,21 +288,41 @@ def test_save_cool_enforce_integer():
     assert fh is not None
 
     # load data
-    matrix, cut_intervals, nan_bins, distance_counts, correction_factors = fh.load()
-    instances, features = matrix.nonzero()
-    instances_factors = correction_factors[instances]
-    features_factors = correction_factors[features]
-    instances_factors *= features_factors
+    # matrix, cut_intervals, nan_bins, distance_counts, correction_factors = fh.load()
+    # instances, features = matrix.nonzero()
+    # instances_factors = correction_factors[instances]
+    # features_factors = correction_factors[features]
+    # instances_factors *= features_factors
 
-    matrix_applied_correction = matrix.data * instances_factors
+    # matrix_applied_correction = matrix.data / instances_factors
 
-    nt.assert_almost_equal(np.rint(matrix_applied_correction), matrix_test.data, decimal=1)
+    nt.assert_almost_equal(matrix.data, matrix_test.data, decimal=0)
     nt.assert_equal(len(cut_intervals), len(cut_intervals_test))
     nt.assert_equal(nan_bins, nan_bins_test)
     nt.assert_equal(distance_counts, distance_counts_test)
 
     # os.unlink(cool_outfile)
     os.unlink(cool_outfile)
+
+
+def test_load_cool_hic2cool_versions():
+    pMatrixFile = ROOT + 'GSE63525_GM12878_insitu_primary_2_5mb_hic2cool042.cool'
+    hic2cool_042 = MatrixFileHandler(pFileType='cool', pMatrixFile=pMatrixFile, pCorrectionFactorTable='KR')
+    pMatrixFile = ROOT + 'GSE63525_GM12878_insitu_primary_2_5mb_hic2cool051.cool'
+    hic2cool_051 = MatrixFileHandler(pFileType='cool', pMatrixFile=pMatrixFile, pCorrectionFactorTable='KR')
+
+    # hic2cool_051 = MatrixFileHandler(pFileType='h5', pMatrixFile=, pCorrectionFactorTable='KR')
+    # hic2cool_042 = hm.hiCMatrix(ROOT + 'GSE63525_GM12878_insitu_primary_2_5mb_hic2cool042.cool')
+    # hic2cool_051 = hm.hiCMatrix(ROOT + 'GSE63525_GM12878_insitu_primary_2_5mb_hic2cool051.cool')
+
+    # hic2cool_041 = hm.hiCMatrix(outfile.name)
+    matrix, cut_intervals, nan_bins, distance_counts, correction_factors = hic2cool_042.load()
+    matrix_test, cut_intervals_test, nan_bins_test, distance_counts_test, correction_factors_test = hic2cool_051.load()
+
+    nt.assert_almost_equal(matrix.data, matrix_test.data, decimal=0)
+    nt.assert_equal(len(cut_intervals), len(cut_intervals_test))
+    nt.assert_equal(nan_bins, nan_bins_test)
+    nt.assert_equal(distance_counts, distance_counts_test)
 
 
 def test_save_cool_apply_division():
@@ -337,11 +359,3 @@ def test_save_cool_apply_division():
     nt.assert_equal(distance_counts, distance_counts_test)
 
     os.unlink(cool_outfile)
-
-
-def test_load_ginteractions():
-    pass
-
-
-def test_save_ginteractions():
-    pass
