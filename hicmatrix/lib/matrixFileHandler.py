@@ -10,7 +10,7 @@ class MatrixFileHandler():
 
     def __init__(self, pFileType='cool', pMatrixFile=None, pChrnameList=None,
                  pApplyCorrectionCoolerLoad=None, pBedFileHicPro=None, pCorrectionFactorTable=None,
-                 pCorrectionOperator=None, pEnforceInteger=None, pAppend=None, pFileWasH5=None, pHiCInfo=None):
+                 pCorrectionOperator=None, pEnforceInteger=None, pAppend=None, pFileWasH5=None, pHiCInfo=None, pHic2CoolVersion=None):
 
         self.class_ = getattr(importlib.import_module('.' + pFileType.lower(), package='hicmatrix.lib'), pFileType.title())
 
@@ -36,6 +36,9 @@ class MatrixFileHandler():
                     self.matrixFile.applyCorrectionLoad = pApplyCorrectionCoolerLoad
                 if pHiCInfo is not None:
                     self.hic_metadata = pHiCInfo
+                log.debug('pHic2CoolVersion : {}'.format(pHic2CoolVersion))
+                if pHic2CoolVersion is not None:
+                    self.matrixFile.hic2cool_version = pHic2CoolVersion
 
     def load(self):
 
