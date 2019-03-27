@@ -151,18 +151,25 @@ class Cool(MatrixFile, object):
                                 log.debug('0.4')
 
                                 self.correctionOperator = '*'
-                        elif 'hicmatrix' in generated_by:
+                        else:
+                            self.correctionOperator = '*'
 
-                            self.hicmatrix_version = generated_by.split('-')[1]
-                            if self.hicmatrix_version >= '8':
-                                self.correctionOperator = '/'
-                            else:
-                                self.correctionOperator = '*'
+                        log.debug('hic2cool: {}'.format(self.hic2cool_version))
+                        log.debug('self.correctionOperator : {}'.format(self.correctionOperator))
+
+                        # elif 'hicmatrix' in generated_by:
+
+                        #     self.hicmatrix_version = generated_by.split('-')[1]
+                        #     if self.hicmatrix_version >= '8':
+                        #         self.correctionOperator = '/'
+                        #     else:
+                        #         self.correctionOperator = '*'
                     else:
                         self.correctionOperator = '*'
 
                 instances_factors *= features_factors
-
+                log.debug('hic2cool: {}'.format(self.hic2cool_version))
+                log.debug('self.correctionOperator: {}'.format(self.correctionOperator))
                 if self.correctionOperator == '*':
                     matrix.data *= instances_factors
                 elif self.correctionOperator == '/':
@@ -225,11 +232,11 @@ class Cool(MatrixFile, object):
         # instead of handling this before.
         bins_data_frame = pd.DataFrame(self.cut_intervals, columns=['chrom', 'start', 'end', 'interactions']).drop('interactions', axis=1)
         dtype_pixel = {'bin1_id': np.int32, 'bin2_id': np.int32, 'count': np.int32}
-
+        log.debug('hic2cool: {}'.format(self.hic2cool_version))
+        log.debug('self.correctionOperator: {}'.format(self.correctionOperator))
         if self.correction_factors is not None and pApplyCorrection:
             dtype_pixel['weight'] = np.float32
-            if (self.hic2cool_version is not None and self.hic2cool_version <= '0.5') or \
-                    (self.hicmatrix_version is not None and self.hicmatrix_version <= '8'):
+            if (self.hic2cool_version is not None and self.hic2cool_version >= '0.5') or self.fileWasH5:
 
                 log.debug('wash5 true')
                 self.correction_factors = np.array(self.correction_factors).flatten()
@@ -238,6 +245,8 @@ class Cool(MatrixFile, object):
                 self.correction_factors[mask] = 0
                 mask = np.isinf(self.correction_factors)
                 self.correction_factors[mask] = 0
+                self.correctionOperator = '*'
+                log.debug('inverted correction factors')
             weight = convertNansToOnes(np.array(self.correction_factors).flatten())
             bins_data_frame = bins_data_frame.assign(weight=weight)
 
@@ -257,7 +266,7 @@ class Cool(MatrixFile, object):
             log.debug('self.correctionOperator: {}'.format(self.correctionOperator))
             log.debug('self.fileWasH5: {}'.format(self.fileWasH5))
 
-            if self.correctionOperator == '*':
+            if self.correctionOperator == '*' or self.correctionOperator is None:
                 self.matrix.data /= instances_factors
             elif self.correctionOperator == '/' or self.fileWasH5:
                 self.matrix.data *= instances_factors
@@ -315,8 +324,8 @@ class Cool(MatrixFile, object):
         # info['nchroms'] = int(bins_data_frame['chrom'][:].nunique())
         # info['chromosomes'] = list(bins_data_frame['chrom'][:].unique())
         # info['nnz'] = np.string_(str(self.matrix.nnz * 2))
-        info['min-value'] = np.string_(str(matrix_data_frame['count'].min()))
-        info['max-value'] = np.string_(str(matrix_data_frame['count'].max()))
+        # info['min-value'] = np.string_(str(matrix_data_frame['count'].min()))
+        # info['max-value'] = np.string_(str(matrix_data_frame['count'].max()))
         # info['sum-elements'] = int(matrix_data_frame['count'].sum())
 
         if self.hic_metadata is not None and 'matrix-generated-by' in self.hic_metadata:
