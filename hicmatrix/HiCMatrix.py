@@ -21,11 +21,13 @@ warnings.simplefilter(action='ignore', category=PendingDeprecationWarning)
 # warnings.simplefilter(action='ignore', category=tables.exceptions.FlavorWarning)
 
 import numpy as np
+import pandas as pd
 from scipy.sparse import csr_matrix, dia_matrix, triu, tril
 from scipy.sparse import vstack as sparse_vstack
 from scipy.sparse import hstack as sparse_hstack
 import tables
-from intervaltree import IntervalTree, Interval
+# from intervaltree import IntervalTree, Interval
+from ncls import NCLS
 import cooler
 
 from .utilities import toBytes
@@ -149,6 +151,7 @@ class hiCMatrix:
         self.cut_intervals = cut_intervals
         self.interval_trees, self.chrBinBoundaries = \
             self.intervalListToIntervalTree(self.cut_intervals)
+        # log.debug('')
 
     def getBinSize(self):
         """
@@ -157,6 +160,7 @@ class hiCMatrix:
         bin at the en of the chromosomes) a warning is issued.
         In case of uneven bins, the median is returned.
         """
+
         if self.bin_size is None:
             chrom, start, end, extra = zip(*self.cut_intervals)
             median = int(np.median(np.diff(start)))
@@ -246,9 +250,21 @@ class hiCMatrix:
             exit(1)
 
         try:
+            # TODO
+            # startbin = sorted(self.interval_trees[chrname][startpos:startpos + 1])[0].data
+            # endbin = sorted(self.interval_trees[chrname][endpos:endpos + 1])[0].data
+            iterator_startpos_ncls = self.interval_trees[chrname].find_overlap(startpos, startpos + 1)
+            iterator_endpos_ncls = self.interval_trees[chrname].find_overlap(endpos, endpos + 1)
 
-            startbin = sorted(self.interval_trees[chrname][startpos:startpos + 1])[0].data
-            endbin = sorted(self.interval_trees[chrname][endpos:endpos + 1])[0].data
+            startbin_list = [i for i in iterator_startpos_ncls]
+            endbin_list = [i for i in iterator_endpos_ncls]
+            startbin_list = sorted(startbin_list)
+            endbin_list = sorted(endbin_list)
+            startbin = startbin_list[0][2]
+            endbin = endbin_list[0][2]
+            # [x for x in self.interval_trees[chrname].]
+            # startbin = sorted(self.interval_trees[chrname][startpos:startpos + 1])[0].data
+            # endbin = sorted(self.interval_trees[chrname][endpos:endpos + 1])[0].data
         except IndexError:
             # log.exception("chrname: " + chrname)
             # log.exception("len intervaltree: "+len(self.interval_trees[chrname]))
@@ -591,8 +607,10 @@ class hiCMatrix:
         these are kept, while any other is removed
         from the matrix
         """
+        # TODO
         chromosome_list = check_chrom_str_bytes(self.interval_trees, chromosome_list)
-
+        log.debug('chromosome_list {}'.format(chromosome_list))
+        log.debug('self.chrBinBoundaries {}'.format(self.chrBinBoundaries))
         try:
             [self.chrBinBoundaries[x] for x in chromosome_list]
         except KeyError as e:
@@ -945,39 +963,128 @@ class hiCMatrix:
 
         return chrom_sizes
 
-    def intervalListToIntervalTree(self, interval_list):
-        """
-        given an ordered list of (chromosome name, start, end)
-        this is transformed to a number of interval trees,
-        one for each chromosome
-        """
+    # def intervalListToIntervalTree(self, interval_list):
+    #     """
+    #     given an ordered list of (chromosome name, start, end)
+    #     this is transformed to a number of interval trees,
+    #     one for each chromosome
+    #     """
 
+    #     assert len(interval_list) > 0, "Interval list is empty"
+    #     cut_int_tree = {}
+    #     chrbin_boundaries = OrderedDict()
+    #     intval_id = 0
+    #     chr_start_id = 0
+    #     previous_chrom = None
+    #     for intval in interval_list:
+    #         chrom, start, end = intval[0:3]
+    #         start = int(start)
+    #         end = int(end)
+    #         if previous_chrom != chrom:
+    #             if previous_chrom is None:
+    #                 previous_chrom = chrom
+
+    #             chrbin_boundaries[previous_chrom] = \
+    #                 (chr_start_id, intval_id)
+    #             chr_start_id = intval_id
+    #             cut_int_tree[chrom] = IntervalTree()
+    #             previous_chrom = chrom
+
+    #         cut_int_tree[chrom].add(Interval(start, end, intval_id))
+
+    #         intval_id += 1
+    #     chrbin_boundaries[chrom] = (chr_start_id, intval_id)
+
+    #     return cut_int_tree, chrbin_boundaries
+
+    def intervalListToIntervalTree(self, interval_list):
+        r"""
+        given a dictionary containing tuples of chrom, start, end,
+        this is transformed to an interval trees. To each
+        interval an id is assigned, this id corresponds to the
+        position of the interval in the given array of tuples
+        and if needed can be used to identify
+        the index of a row/colum in the hic matrix.
+
+        >>> bin_list = [('chrX', 0, 50000), ('chrX', 50000, 100000)]
+        >>> res = intervalListToIntervalTree(bin_list)
+        >>> sorted(res['chrX'].intervals())
+        [Interval(0, 50000, 0), Interval(50000, 100000, 1)]
+        """
         assert len(interval_list) > 0, "Interval list is empty"
         cut_int_tree = {}
         chrbin_boundaries = OrderedDict()
-        intval_id = 0
+        bin_int_tree = {}
+        chrom_current = None
+        start_list = []
+        end_list = []
+        intval_id_list = []
         chr_start_id = 0
-        previous_chrom = None
-        for intval in interval_list:
+        # log.debug('interval_list {}'.format(interval_list))
+        for intval_id, intval in enumerate(interval_list):
             chrom, start, end = intval[0:3]
-            start = int(start)
-            end = int(end)
-            if previous_chrom != chrom:
-                if previous_chrom is None:
-                    previous_chrom = chrom
+            if chrom_current is None:
+                chrom_current = chrom
+                start_list.append(start)
+                end_list.append(end)
+                intval_id_list.append(intval_id)
+            elif chrom_current != chrom:
+                # log.debug('switch of chromosome! {} to {}'.format(chrom_current, chrom))
 
-                chrbin_boundaries[previous_chrom] = \
+                start_pd = pd.Series(start_list)
+                end_pd = pd.Series(end_list)
+                intval_id_pd = pd.Series(intval_id_list)
+    #             print(start_pd)
+                # log.debug('start_pd {}'.format(start_pd))
+                # log.debug('end_pd {}'.format(end_pd))
+
+                bin_int_tree[chrom_current] = NCLS(start_pd.values, end_pd.values, intval_id_pd.values)
+                chrbin_boundaries[chrom_current] = \
                     (chr_start_id, intval_id)
                 chr_start_id = intval_id
-                cut_int_tree[chrom] = IntervalTree()
-                previous_chrom = chrom
+                start_list = []
+                end_list = []
+                intval_id_list = []
+                start_list.append(start)
+                end_list.append(end)
+                intval_id_list.append(intval_id)
+                chrom_current = chrom
+                if intval_id == len(interval_list) - 1:
+                    start_pd = pd.Series(start_list)
+                    end_pd = pd.Series(end_list)
+                    intval_id_pd = pd.Series(intval_id_list)
+                    bin_int_tree[chrom_current] = NCLS(start_pd.values, end_pd.values, intval_id_pd.values)
+                    chrbin_boundaries[chrom_current] = \
+                        (chr_start_id, intval_id + 1)
+            elif intval_id == len(interval_list) - 1:
+                # log.debug('foo')
+                start_list.append(start)
+                end_list.append(end)
+                intval_id_list.append(intval_id)
+                start_pd = pd.Series(start_list)
+                end_pd = pd.Series(end_list)
+                intval_id_pd = pd.Series(intval_id_list)
+                bin_int_tree[chrom_current] = NCLS(start_pd.values, end_pd.values, intval_id_pd.values)
+                chrbin_boundaries[chrom_current] = \
+                    (chr_start_id, intval_id + 1)
+            # elif chrom_current != chrom and  intval_id == len(interval_list)-1:
 
-            cut_int_tree[chrom].add(Interval(start, end, intval_id))
+            else:
+                start_list.append(start)
+                end_list.append(end)
+                intval_id_list.append(intval_id)
+            # if
+        # chrbin_boundaries[chrom] = (chr_start_id, intval_id)
+    #         if chrom not in bin_int_tree:
+    #             bin_int_tree[chrom] = IntervalTree()
+    #         bin_int_tree[chrom].add(NCLS(start, end, intval_id))
+        # log.debug('bin_int_tree {}'.format(bin_int_tree))
+        # log.debug('bin_int_tree[a] {}'.format(bin_int_tree['a'].intervals()))
+        # log.debug('bin_int_tree[b] {}'.format(bin_int_tree['b'].intervals()))
 
-            intval_id += 1
-        chrbin_boundaries[chrom] = (chr_start_id, intval_id)
-
-        return cut_int_tree, chrbin_boundaries
+        # # log.debug('bin_int_tree.intervals() {}'.format(bin_int_tree))
+        # log.debug('chrbin_boundaries {}'.format(chrbin_boundaries))
+        return bin_int_tree, chrbin_boundaries
 
 
 def check_cooler(pFileName):

@@ -7,13 +7,15 @@ import warnings
 from six import iteritems
 from past.builtins import zip
 from collections import OrderedDict
-from intervaltree import IntervalTree, Interval
+# from intervaltree import IntervalTree, Interval
+from ncls import NCLS
 
 import numpy as np
 import numpy.testing as nt
 from scipy.sparse import csr_matrix, dia_matrix
 from scipy.sparse import coo_matrix
 from tempfile import NamedTemporaryFile
+import pandas as pd
 
 from hicmatrix import HiCMatrix as hm
 from hicmatrix.lib import MatrixFileHandler
@@ -1004,12 +1006,43 @@ def test_intervalListToIntervalTree(capsys):
     tree, boundaries = hic.intervalListToIntervalTree(interval_list)
 
     # test tree
-    nt.assert_equal(tree['a'], IntervalTree([Interval(0, 10, 0), Interval(10, 20, 1)]))
-    nt.assert_equal(tree['b'], IntervalTree([Interval(20, 30, 2), Interval(30, 50, 3),
-                                             Interval(50, 100, 4)]))
-    nt.assert_equal(tree['c'], IntervalTree([Interval(100, 200, 5), Interval(200, 210, 6)]))
-    nt.assert_equal(tree['d'], IntervalTree([Interval(210, 220, 7)]))
-    nt.assert_equal(tree['e'], IntervalTree([Interval(220, 250, 8)]))
+    start = np.array([0, 10])
+    end = np.array([10, 20])
+    data = np.array([0, 1])
+    a_ncls = NCLS(start, end, data)
+
+    start = np.array([20, 30, 50])
+    end = np.array([30, 50, 100])
+    data = np.array([2, 3, 4])
+    b_ncls = NCLS(start, end, data)
+
+    start = np.array([100, 200])
+    end = np.array([200, 210])
+    data = np.array([5, 6])
+    c_ncls = NCLS(start, end, data)
+
+    start = np.array([210])
+    end = np.array([220])
+    data = np.array([7])
+    d_ncls = NCLS(start, end, data)
+
+    start = np.array([220])
+    end = np.array([250])
+    data = np.array([8])
+    e_ncls = NCLS(start, end, data)
+
+    nt.assert_equal(tree['a'].intervals(), a_ncls.intervals())
+    nt.assert_equal(tree['b'].intervals(), b_ncls.intervals())
+    nt.assert_equal(tree['c'].intervals(), c_ncls.intervals())
+    nt.assert_equal(tree['d'].intervals(), d_ncls.intervals())
+    nt.assert_equal(tree['e'].intervals(), e_ncls.intervals())
+
+    # nt.assert_equal(tree['a'], IntervalTree([Interval(0, 10, 0), Interval(10, 20, 1)]))
+    # nt.assert_equal(tree['b'], IntervalTree([Interval(20, 30, 2), Interval(30, 50, 3),
+    #                                          Interval(50, 100, 4)]))
+    # nt.assert_equal(tree['c'], IntervalTree([Interval(100, 200, 5), Interval(200, 210, 6)]))
+    # nt.assert_equal(tree['d'], IntervalTree([Interval(210, 220, 7)]))
+    # nt.assert_equal(tree['e'], IntervalTree([Interval(220, 250, 8)]))
 
     # test boundaries
     nt.assert_equal(boundaries, OrderedDict([('a', (0, 2)), ('b', (2, 5)), ('c', (5, 7)),
