@@ -106,6 +106,8 @@ class Cool(MatrixFile, object):
             if len(self.chrnameList) == 1:
                 try:
                     matrix = cooler_file.matrix(balance=False, sparse=True).fetch(self.chrnameList[0]).tocsr()
+                    self.minValue = matrix.data.min()
+                    self.maxValue = matrix.data.max()
                 except ValueError:
                     exit("Wrong chromosome format. Please check UCSC / ensembl notation.")
             else:
