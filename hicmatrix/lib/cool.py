@@ -13,6 +13,7 @@ import pandas as pd
 from past.builtins import zip
 from builtins import super
 from .matrixFile import MatrixFile
+import math
 
 from hicmatrix.utilities import toString
 from hicmatrix.utilities import convertNansToOnes
@@ -36,12 +37,15 @@ class Cool(MatrixFile, object):
 
         self.hic2cool_version = None
         self.hicmatrix_version = None
+        self.scaleToOriginalRange = None
 
     def getInformationCoolerBinNames(self):
         return cooler.Cooler(self.matrixFileName).bins().columns.values
 
     def load(self):
         log.debug('Load in cool format')
+        self.minValue = None
+        self.maxValue = None
         if self.matrixFileName is None:
             log.info('No matrix is initialized')
 
@@ -92,6 +96,9 @@ class Cool(MatrixFile, object):
             # log.debug('cooler_file.info[\'nbins\'] {}'.format(type(cooler_file.info['nbins'])))
 
             matrix = csr_matrix((data, (instances, features)), shape=(np.int(cooler_file.info['nbins']), np.int(cooler_file.info['nbins'])), dtype=count_dtype)
+            self.minValue = data.min()
+            self.maxValue = data.max()
+
             # del data
             # del instances
             # del features
@@ -174,6 +181,28 @@ class Cool(MatrixFile, object):
                     matrix.data *= instances_factors
                 elif self.correctionOperator == '/':
                     matrix.data /= instances_factors
+
+                # if self.scaleToOriginalRange is not None:
+                min_value = matrix.data.min()
+                max_value = matrix.data.max()
+                # check if max smaller one or if not same mangnitude
+                if max_value < 1 or (np.absolute(int(math.log10(max_value))  - int(math.log10(self.maxValue))) > 1):
+                    desired_range_difference = self.maxValue - self.minValue
+                    
+                    min_value = matrix.data.min()
+                    max_value = matrix.data.max()
+
+                    matrix.data = (matrix.data - min_value)
+                    matrix.data /= (max_value - min_value)
+                    matrix.data *= desired_range_difference
+                    matrix.data += self.minValue
+                    self.scaleToOriginalRange = True
+                    # diff_scale_factor = matrix.data.max() / max_value 
+                    # if self.correctionOperator == '*':
+                    #     correction_factors *= diff_scale_factor
+                    # if self.correctionOperator == '/':
+                    #     correction_factors /= diff_scale_factor
+
 
         cut_intervals = []
 
@@ -265,6 +294,16 @@ class Cool(MatrixFile, object):
             # Apply the invert operation to get the original data
             log.debug('self.correctionOperator: {}'.format(self.correctionOperator))
             log.debug('self.fileWasH5: {}'.format(self.fileWasH5))
+
+            if self.scaleToOriginalRange:
+                min_value = self.matrix.data.min()
+                max_value = self.matrix.data.max()
+                desired_range_difference = max_value - min_value
+
+                self.matrix.data = (self.matrix.data - self.minValue)
+                self.matrix.data /= (self.maxValue - self.minValue)
+                self.matrix.data *= desired_range_difference
+                self.matrix.data += min_value
 
             if self.correctionOperator == '*' or self.correctionOperator is None:
                 self.matrix.data /= instances_factors
