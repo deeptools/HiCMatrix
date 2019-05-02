@@ -15,7 +15,7 @@ from builtins import super
 from .matrixFile import MatrixFile
 import math
 
-from hicmatrix.utilities import toString
+from hicmatrix.utilities import toString, toBytes
 from hicmatrix.utilities import convertNansToOnes
 from hicmatrix._version import __version__
 
@@ -62,7 +62,7 @@ class Cool(MatrixFile, object):
             log.info('The following file was tried to open: {}'.format(self.matrixFileName))
             log.info("The following nodes are available: {}".format(cooler.fileops.list_coolers(self.matrixFileName.split("::")[0])))
             exit()
-
+        log.debug('self.chrnameList {}'.format(self.chrnameList))
         if self.chrnameList is None:
             matrixDataFrame = cooler_file.matrix(balance=False, sparse=True, as_pixels=True)
             used_dtype = np.int32
@@ -105,6 +105,7 @@ class Cool(MatrixFile, object):
         else:
             if len(self.chrnameList) == 1:
                 try:
+                    # self.chrnameList[0]
                     matrix = cooler_file.matrix(balance=False, sparse=True).fetch(self.chrnameList[0]).tocsr()
                     self.minValue = matrix.data.min()
                     self.maxValue = matrix.data.max()
@@ -390,8 +391,8 @@ class Cool(MatrixFile, object):
                              temp_dir=local_temp_dir)
 
         log.debug('info {}'.format(info))
-        if self.appendData == 'w':
-            fileName = pFileName.split('::')[0]
-            with h5py.File(fileName, 'r+') as h5file:
-                h5file.attrs.update(info)
-                h5file.close()
+        # if self.appendData == 'w':
+        #     fileName = pFileName.split('::')[0]
+        #     with h5py.File(fileName, 'r+') as h5file:
+        #         h5file.attrs.update(info)
+        #         h5file.close()
