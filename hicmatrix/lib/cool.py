@@ -14,6 +14,7 @@ from past.builtins import zip
 from builtins import super
 from .matrixFile import MatrixFile
 import math
+import time
 
 from hicmatrix.utilities import toString, toBytes
 from hicmatrix.utilities import convertNansToOnes
@@ -88,6 +89,9 @@ class Cool(MatrixFile, object):
                 features[start_pos:start_pos + len(_features)] = _features
                 start_pos += len(_features)
                 i += size
+                del _data
+                del _instances
+                del _features
 
             # log.debug('max feature {}'.format(np.max(features)))
             # log.debug('max instance {}'.format(np.max(instances)))
@@ -99,9 +103,9 @@ class Cool(MatrixFile, object):
             self.minValue = data.min()
             self.maxValue = data.max()
 
-            # del data
-            # del instances
-            # del features
+            del data
+            del instances
+            del features
         else:
             if len(self.chrnameList) == 1:
                 try:
@@ -208,10 +212,13 @@ class Cool(MatrixFile, object):
 
 
         cut_intervals = []
-
+        time_start = time.time()
+        log.debug('Creating cut_intervals {}'.format(time_start))
         for values in cut_intervals_data_frame.values:
             cut_intervals.append(tuple([toString(values[0]), values[1], values[2], 1.0]))
-
+        log.debug('Creating cut_intervals {} DONE'.format(time.time() - time_start))
+        del cut_intervals_data_frame
+        del correction_factors_data_frame
         # try to restore nan_bins.
         try:
             shape = matrix.shape[0] if matrix.shape[0] < matrix.shape[1] else matrix.shape[1]
@@ -317,6 +324,11 @@ class Cool(MatrixFile, object):
             features_factors = None
 
             self.matrix.eliminate_zeros()
+
+        if self.correction_factors is not None and pApplyCorrection is False:
+            dtype_pixel['weight'] = np.float32
+            weight = convertNansToOnes(np.array(self.correction_factors).flatten())
+            bins_data_frame = bins_data_frame.assign(weight=weight)
 
         instances, features = self.matrix.nonzero()
 
