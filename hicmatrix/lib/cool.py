@@ -78,6 +78,8 @@ class Cool(MatrixFile, object):
             if size == 0:
                 size = 1
             start_pos = 0
+            time_start = time.time()
+            log.debug('Read matrix chunk by chunk')
             while i < cooler_file.info['nbins']:
                 matrixDataFrameChunk = matrixDataFrame[i:i + size]
                 _data = matrixDataFrameChunk['count'].values.astype(count_dtype)
@@ -92,6 +94,9 @@ class Cool(MatrixFile, object):
                 del _data
                 del _instances
                 del _features
+                del matrixDataFrameChunk
+            log.debug('Read matrix chunk by chunk {} DONE'.format(time.time() - time_start))
+            time_start = time.time()
 
             # log.debug('max feature {}'.format(np.max(features)))
             # log.debug('max instance {}'.format(np.max(instances)))
@@ -100,6 +105,8 @@ class Cool(MatrixFile, object):
             # log.debug('cooler_file.info[\'nbins\'] {}'.format(type(cooler_file.info['nbins'])))
 
             matrix = csr_matrix((data, (instances, features)), shape=(np.int(cooler_file.info['nbins']), np.int(cooler_file.info['nbins'])), dtype=count_dtype)
+            log.debug('Creating csr matrix {} DONE'.format(time.time() - time_start))
+            
             self.minValue = data.min()
             self.maxValue = data.max()
 
@@ -188,7 +195,8 @@ class Cool(MatrixFile, object):
                     matrix.data *= instances_factors
                 elif self.correctionOperator == '/':
                     matrix.data /= instances_factors
-
+                del instances_factors
+                del features_factors
                 # if self.scaleToOriginalRange is not None:
                 min_value = matrix.data.min()
                 max_value = matrix.data.max()
@@ -213,7 +221,7 @@ class Cool(MatrixFile, object):
 
         cut_intervals = []
         time_start = time.time()
-        log.debug('Creating cut_intervals {}'.format(time_start))
+        log.debug('Creating cut_intervals')
         for values in cut_intervals_data_frame.values:
             cut_intervals.append(tuple([toString(values[0]), values[1], values[2], 1.0]))
         log.debug('Creating cut_intervals {} DONE'.format(time.time() - time_start))

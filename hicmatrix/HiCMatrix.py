@@ -21,7 +21,7 @@ warnings.simplefilter(action='ignore', category=PendingDeprecationWarning)
 # warnings.simplefilter(action='ignore', category=tables.exceptions.FlavorWarning)
 
 import numpy as np
-from scipy.sparse import csr_matrix, dia_matrix, triu, tril
+from scipy.sparse import csr_matrix, dia_matrix, triu, tril, diags
 from scipy.sparse import vstack as sparse_vstack
 from scipy.sparse import hstack as sparse_hstack
 import tables
@@ -100,6 +100,8 @@ class hiCMatrix:
             log.error('matrix file not given')
             sys.exit(1)
         log.debug('data loaded!')
+        exit(0)
+
 
     def save(self, pMatrixName, pSymmetric=True, pApplyCorrection=False, pHiCInfo=None):
         """ As an output format cooler and mcooler are supported.
@@ -127,13 +129,73 @@ class hiCMatrix:
         checks if the matrix is complete or if only half of the matrix was saved.
         Returns a whole matrix.
         """
-        # log.debug('sum of tril: {}'.format(tril(self.matrix, k=-1).sum()))
-        if tril(self.matrix, k=-1).sum() == 0:
-            # this case means that the lower triangle of the
-            # symmetric matrix (below the main diagonal)
-            # is zero. In this case, replace the lower
-            # triangle using the upper triangle
-            self.matrix = self.matrix + triu(self.matrix, 1).T
+        import time
+        start_time = time.time()
+        tril_matrix = tril(self.matrix, k=-1)
+        tril_matrix_sum = tril_matrix.sum()
+        del tril_matrix
+        # if tril(self.matrix, k=-1).sum() == 0:
+        if tril_matrix_sum == 0:
+
+            instances = np.zeros(self.matrix.nnz * 2, dtype=np.int)
+            features = np.zeros(self.matrix.nnz * 2, dtype=np.int)
+            data = np.zeros(self.matrix.nnz * 2, dtype=np.float16)
+            i = 0
+            counter = 0
+            log.debug('np arrys init done')
+            while i < len(self.matrix.indptr) - 1:
+                j_start = self.matrix.indptr[i]
+                j_end = self.matrix.indptr[i+1]
+                
+                while j_start < j_end:
+                    # j = 
+                    if i == self.matrix.indices[j_start]:
+                        instances[counter] = i
+                        features[counter] = self.matrix.indices[j_start]
+                        data[counter] = self.matrix.data[j_start]
+                        j_start += 1
+                        counter += 1
+                    else:
+                        instances[counter] = i
+                        features[counter] = self.matrix.indices[j_start]
+                        data[counter] = self.matrix.data[j_start]
+                        # j_start += 1
+                        counter += 1
+
+                        instances[counter] = self.matrix.indices[j_start]
+                        features[counter] = i
+                        data[counter] = self.matrix.data[j_start]
+                        counter += 1
+                        j_start += 1
+                i += 1
+
+            x_shape, y_shape = self.matrix.shape
+            del self.matrix
+            self.matrix = csr_matrix((data, (instances, features)), shape=(x_shape, y_shape))
+            del instances
+            del features
+            del data
+            # log.debug('time for tril {}'.format(time.time() - start_time))
+            # start_time = time.time()
+            # # this case means that the lower triangle of the
+            # # symmetric matrix (below the main diagonal)
+            # # is zero. In this case, replace the lower
+            # # triangle using the upper triangle
+            # # self.matrix = self.matrix + triu(self.matrix, 1).T
+            # triu_matrix = triu(self.matrix, 1)
+            # triu_matrix_transpose = self.matrix.transpose()
+            # del triu_matrix
+            # # new_matrix = sparse_vstack((self.matrix, triu_matrix_transpose))
+
+            # # new_matrix = self.matrix + triu_matrix_transpose
+
+            # new_matrix = self.matrix #+ triu_matrix_transpose - diags(self.matrix.diagonal(),dtype=int) 
+            # del self.matrix
+            # del triu_matrix_transpose
+            # self.matrix = new_matrix
+            # self.matrix = self.matrix + triu(self.matrix, 1).T
+            log.debug('time to set new matrix {}'.format(time.time() - start_time))
+            
 
         # return matrix
 
