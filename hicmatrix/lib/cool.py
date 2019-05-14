@@ -13,8 +13,10 @@ import pandas as pd
 from past.builtins import zip
 from builtins import super
 from .matrixFile import MatrixFile
+import math
+import time
 
-from hicmatrix.utilities import toString
+from hicmatrix.utilities import toString, toBytes
 from hicmatrix.utilities import convertNansToOnes
 from hicmatrix._version import __version__
 
@@ -36,12 +38,15 @@ class Cool(MatrixFile, object):
 
         self.hic2cool_version = None
         self.hicmatrix_version = None
+        self.scaleToOriginalRange = None
 
     def getInformationCoolerBinNames(self):
         return cooler.Cooler(self.matrixFileName).bins().columns.values
 
     def load(self):
         log.debug('Load in cool format')
+        self.minValue = None
+        self.maxValue = None
         if self.matrixFileName is None:
             log.info('No matrix is initialized')
 
@@ -58,7 +63,7 @@ class Cool(MatrixFile, object):
             log.info('The following file was tried to open: {}'.format(self.matrixFileName))
             log.info("The following nodes are available: {}".format(cooler.fileops.list_coolers(self.matrixFileName.split("::")[0])))
             exit()
-
+        log.debug('self.chrnameList {}'.format(self.chrnameList))
         if self.chrnameList is None:
             matrixDataFrame = cooler_file.matrix(balance=False, sparse=True, as_pixels=True)
             used_dtype = np.int32
@@ -84,6 +89,9 @@ class Cool(MatrixFile, object):
                 features[start_pos:start_pos + len(_features)] = _features
                 start_pos += len(_features)
                 i += size
+                del _data
+                del _instances
+                del _features
 
             # log.debug('max feature {}'.format(np.max(features)))
             # log.debug('max instance {}'.format(np.max(instances)))
@@ -92,13 +100,19 @@ class Cool(MatrixFile, object):
             # log.debug('cooler_file.info[\'nbins\'] {}'.format(type(cooler_file.info['nbins'])))
 
             matrix = csr_matrix((data, (instances, features)), shape=(np.int(cooler_file.info['nbins']), np.int(cooler_file.info['nbins'])), dtype=count_dtype)
-            # del data
-            # del instances
-            # del features
+            self.minValue = data.min()
+            self.maxValue = data.max()
+
+            del data
+            del instances
+            del features
         else:
             if len(self.chrnameList) == 1:
                 try:
+                    # self.chrnameList[0]
                     matrix = cooler_file.matrix(balance=False, sparse=True).fetch(self.chrnameList[0]).tocsr()
+                    self.minValue = matrix.data.min()
+                    self.maxValue = matrix.data.max()
                 except ValueError:
                     exit("Wrong chromosome format. Please check UCSC / ensembl notation.")
             else:
@@ -175,11 +189,36 @@ class Cool(MatrixFile, object):
                 elif self.correctionOperator == '/':
                     matrix.data /= instances_factors
 
-        cut_intervals = []
+                # if self.scaleToOriginalRange is not None:
+                min_value = matrix.data.min()
+                max_value = matrix.data.max()
+                # check if max smaller one or if not same mangnitude
+                if max_value < 1 or (np.absolute(int(math.log10(max_value))  - int(math.log10(self.maxValue))) > 1):
+                    desired_range_difference = self.maxValue - self.minValue
+                    
+                    min_value = matrix.data.min()
+                    max_value = matrix.data.max()
 
+                    matrix.data = (matrix.data - min_value)
+                    matrix.data /= (max_value - min_value)
+                    matrix.data *= desired_range_difference
+                    matrix.data += self.minValue
+                    self.scaleToOriginalRange = True
+                    # diff_scale_factor = matrix.data.max() / max_value 
+                    # if self.correctionOperator == '*':
+                    #     correction_factors *= diff_scale_factor
+                    # if self.correctionOperator == '/':
+                    #     correction_factors /= diff_scale_factor
+
+
+        cut_intervals = []
+        time_start = time.time()
+        log.debug('Creating cut_intervals {}'.format(time_start))
         for values in cut_intervals_data_frame.values:
             cut_intervals.append(tuple([toString(values[0]), values[1], values[2], 1.0]))
-
+        log.debug('Creating cut_intervals {} DONE'.format(time.time() - time_start))
+        del cut_intervals_data_frame
+        del correction_factors_data_frame
         # try to restore nan_bins.
         try:
             shape = matrix.shape[0] if matrix.shape[0] < matrix.shape[1] else matrix.shape[1]
@@ -266,6 +305,16 @@ class Cool(MatrixFile, object):
             log.debug('self.correctionOperator: {}'.format(self.correctionOperator))
             log.debug('self.fileWasH5: {}'.format(self.fileWasH5))
 
+            if self.scaleToOriginalRange:
+                min_value = self.matrix.data.min()
+                max_value = self.matrix.data.max()
+                desired_range_difference = max_value - min_value
+
+                self.matrix.data = (self.matrix.data - self.minValue)
+                self.matrix.data /= (self.maxValue - self.minValue)
+                self.matrix.data *= desired_range_difference
+                self.matrix.data += min_value
+
             if self.correctionOperator == '*' or self.correctionOperator is None:
                 self.matrix.data /= instances_factors
             elif self.correctionOperator == '/' or self.fileWasH5:
@@ -275,6 +324,11 @@ class Cool(MatrixFile, object):
             features_factors = None
 
             self.matrix.eliminate_zeros()
+
+        if self.correction_factors is not None and pApplyCorrection is False:
+            dtype_pixel['weight'] = np.float32
+            weight = convertNansToOnes(np.array(self.correction_factors).flatten())
+            bins_data_frame = bins_data_frame.assign(weight=weight)
 
         instances, features = self.matrix.nonzero()
 
@@ -349,8 +403,8 @@ class Cool(MatrixFile, object):
                              temp_dir=local_temp_dir)
 
         log.debug('info {}'.format(info))
-        if self.appendData == 'w':
-            fileName = pFileName.split('::')[0]
-            with h5py.File(fileName, 'r+') as h5file:
-                h5file.attrs.update(info)
-                h5file.close()
+        # if self.appendData == 'w':
+        #     fileName = pFileName.split('::')[0]
+        #     with h5py.File(fileName, 'r+') as h5file:
+        #         h5file.attrs.update(info)
+        #         h5file.close()
