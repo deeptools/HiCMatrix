@@ -34,6 +34,7 @@ from .utilities import toString
 from .utilities import check_chrom_str_bytes
 from .lib import MatrixFileHandler
 
+from hicmatrix import hicmatrix_extension
 
 class hiCMatrix:
     """
@@ -100,7 +101,7 @@ class hiCMatrix:
             log.error('matrix file not given')
             sys.exit(1)
         log.debug('data loaded!')
-        exit(0)
+        # exit(0)
 
 
     def save(self, pMatrixName, pSymmetric=True, pApplyCorrection=False, pHiCInfo=None):
@@ -136,46 +137,13 @@ class hiCMatrix:
         del tril_matrix
         # if tril(self.matrix, k=-1).sum() == 0:
         if tril_matrix_sum == 0:
-
-            instances = np.zeros(self.matrix.nnz * 2, dtype=np.int)
-            features = np.zeros(self.matrix.nnz * 2, dtype=np.int)
-            data = np.zeros(self.matrix.nnz * 2, dtype=np.float16)
-            i = 0
-            counter = 0
-            log.debug('np arrys init done')
-            while i < len(self.matrix.indptr) - 1:
-                j_start = self.matrix.indptr[i]
-                j_end = self.matrix.indptr[i+1]
-                
-                while j_start < j_end:
-                    # j = 
-                    if i == self.matrix.indices[j_start]:
-                        instances[counter] = i
-                        features[counter] = self.matrix.indices[j_start]
-                        data[counter] = self.matrix.data[j_start]
-                        j_start += 1
-                        counter += 1
-                    else:
-                        instances[counter] = i
-                        features[counter] = self.matrix.indices[j_start]
-                        data[counter] = self.matrix.data[j_start]
-                        # j_start += 1
-                        counter += 1
-
-                        instances[counter] = self.matrix.indices[j_start]
-                        features[counter] = i
-                        data[counter] = self.matrix.data[j_start]
-                        counter += 1
-                        j_start += 1
-                i += 1
-
-            x_shape, y_shape = self.matrix.shape
+            shape = self.matrix.shape
+            indptr, features, data = hicmatrix_extension.fillLowerTriangle(self.matrix.indptr, self.matrix.indices, 
+                                                                            self.matrix.data, self.matrix.nnz, shape[0])
+            # shape = self.matrix.shape
             del self.matrix
-            self.matrix = csr_matrix((data, (instances, features)), shape=(x_shape, y_shape))
-            del instances
-            del features
-            del data
-            # log.debug('time for tril {}'.format(time.time() - start_time))
+            self.matrix = csr_matrix((data, features, indptr), shape=(shape))
+            # # log.debug('time for tril {}'.format(time.time() - start_time))
             # start_time = time.time()
             # # this case means that the lower triangle of the
             # # symmetric matrix (below the main diagonal)

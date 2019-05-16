@@ -8,6 +8,10 @@ import re
 from setuptools import setup, find_packages
 from setuptools.command.sdist import sdist as _sdist
 from setuptools.command.install import install as _install
+# from distutils.extension import Extension
+
+from distutils.core import setup
+from Cython.Build import cythonize
 
 VERSION_PY = """
 # This file is originally generated from Git information by running 'setup.py
@@ -16,6 +20,9 @@ VERSION_PY = """
 __version__ = '%s'
 """
 
+# sources_list = ['hicmatrix/lib_cpp/hic_matrix_extension.cpp']
+# module1 = Extension('_hicMatrixExtension', sources = sources_list,
+#         extra_compile_args=["-O3", "-std=c++11", "-funroll-loops"])
 
 def update_version_py():
     if not os.path.isdir(".git"):
@@ -120,5 +127,6 @@ setup(
         'Topic :: Scientific/Engineering :: Bio-Informatics'],
     install_requires=install_requires_py,
     zip_safe=False,
-    cmdclass={'sdist': sdist, 'install': install}
+    cmdclass={'sdist': sdist, 'install': install},
+    ext_modules = cythonize("hicmatrix/hicmatrix_extension.pyx")
 )
