@@ -130,6 +130,7 @@ class hiCMatrix:
         checks if the matrix is complete or if only half of the matrix was saved.
         Returns a whole matrix.
         """
+        log.debug('type(csr_matrix) init {}'.format(type(csr_matrix)))
         import time
         start_time = time.time()
         tril_matrix = tril(self.matrix, k=-1)
@@ -140,7 +141,11 @@ class hiCMatrix:
             shape = self.matrix.shape
             indptr, features, data = hicmatrix_extension.fillLowerTriangle(self.matrix.indptr, self.matrix.indices, 
                                                                             self.matrix.data, self.matrix.nnz, shape[0])
-            # shape = self.matrix.shape
+            shape = self.matrix.shape
+            # log.debug('instances {}'.format(instances))
+            log.debug('indpt {}, features {}, data {}'.format(indptr, features, data))
+            # log.debug('instances {}, features {}'.format(instances, features))
+
             del self.matrix
             self.matrix = csr_matrix((data, features, indptr), shape=(shape))
             # # log.debug('time for tril {}'.format(time.time() - start_time))
@@ -163,7 +168,7 @@ class hiCMatrix:
             # self.matrix = new_matrix
             # self.matrix = self.matrix + triu(self.matrix, 1).T
             log.debug('time to set new matrix {}'.format(time.time() - start_time))
-            
+            log.debug('type(csr_matrix) after filltriangle{}'.format(type(csr_matrix)))
 
         # return matrix
 

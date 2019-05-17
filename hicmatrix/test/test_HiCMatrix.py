@@ -95,6 +95,8 @@ def test_save_load_cool():
     # make matrix symmetric
     hic.setMatrix(hic.matrix, cut_intervals)
     hic.fillLowerTriangle()
+
+    log.debug('csr_matrix {}'.format(hic.matrix.toarray()))
     # hic.correction_factors = np.array([0.5, 1, 2, 3, 4])
     # hic.nan_bins = np.array([4])
 
