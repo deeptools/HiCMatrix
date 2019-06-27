@@ -27,6 +27,7 @@ from scipy.sparse import hstack as sparse_hstack
 import tables
 from intervaltree import IntervalTree, Interval
 import cooler
+import time
 
 from .utilities import toBytes
 from .utilities import toString
@@ -57,29 +58,48 @@ class hiCMatrix:
         self.orig_bin_ids = []
         self.orig_cut_intervals = []  # similar to orig_bin_ids. Used to identify the position of masked nan bins
         self.matrixFileHandler = None
-
+        start_time = time.time()
         if pMatrixFile is not None:
             log.debug('Load self.matrixFileHandler')
             fileType = 'cool'
             if pMatrixFile.endswith('.h5'):
                 fileType = 'h5'
             self.matrixFileHandler = MatrixFileHandler(pFileType=fileType, pMatrixFile=pMatrixFile, pChrnameList=pChrnameList)
+            log.debug('init time: {}'.format(time.time() - start_time))
             self.matrix, self.cut_intervals, self.nan_bins, \
                 self.correction_factors, self.distance_counts = self.matrixFileHandler.load()
+            log.debug('load time: {}'.format(time.time() - start_time))
+            start_time = time.time()
 
+            log.debug('data loaded from file handler')
             if self.nan_bins is None:
                 self.nan_bins = np.array([])
 
             self.fillLowerTriangle()
+            log.debug('triangle time: {}'.format(time.time() - start_time))
+            start_time = time.time()
+
+            log.debug('fillLowerTriangle')
 
             self.restoreMaskedBins()
+            log.debug('restoreMaskedBins: {}'.format(time.time() - start_time))
+            start_time = time.time()
+
+            log.debug('restoreMaskedBins')
+
             self.interval_trees, self.chrBinBoundaries = \
                 self.intervalListToIntervalTree(self.cut_intervals)
+            log.debug('intervalListToIntervalTree: {}'.format(time.time() - start_time))
+            start_time = time.time()
+
+            log.debug('intervalListToIntervalTree')
+
         elif pMatrixFile is None:
             log.debug('Only init object, no matrix given.')
         else:
             log.error('matrix file not given')
             sys.exit(1)
+        log.debug('data loaded!')
 
     def save(self, pMatrixName, pSymmetric=True, pApplyCorrection=False, pHiCInfo=None):
         """ As an output format cooler and mcooler are supported.

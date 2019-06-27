@@ -93,13 +93,13 @@ class install(_install):
             sys.stderr.write("Error: {}".format(e))
 
 
-install_requires_py = ["numpy >= 1.13.*",
-                       "scipy >= 1.1.*",
-                       "tables >= 3.4.*",
-                       "pandas >= 0.23.*",
-                       "future >= 0.16.*",
-                       "cooler == 0.8.3",
-                       "intervaltree == 2.1.*"
+install_requires_py = ["numpy >= 1.16.*",
+                       "scipy >= 1.2.*",
+                       "tables >= 3.5.*",
+                       "pandas >= 0.24.*",
+                       "future >= 0.17.*",
+                       "cooler == 0.8.5",
+                       "intervaltree == 3.0.*"
                        ]
 
 setup(
