@@ -27,7 +27,7 @@ from scipy.sparse import hstack as sparse_hstack
 import tables
 from intervaltree import IntervalTree, Interval
 import cooler
-import time 
+import time
 
 from .utilities import toBytes
 from .utilities import toString

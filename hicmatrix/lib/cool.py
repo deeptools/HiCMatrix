@@ -193,9 +193,9 @@ class Cool(MatrixFile, object):
                 min_value = matrix.data.min()
                 max_value = matrix.data.max()
                 # check if max smaller one or if not same mangnitude
-                if max_value < 1 or (np.absolute(int(math.log10(max_value))  - int(math.log10(self.maxValue))) > 1):
+                if max_value < 1 or (np.absolute(int(math.log10(max_value)) - int(math.log10(self.maxValue))) > 1):
                     desired_range_difference = self.maxValue - self.minValue
-                    
+
                     min_value = matrix.data.min()
                     max_value = matrix.data.max()
 
@@ -204,12 +204,11 @@ class Cool(MatrixFile, object):
                     matrix.data *= desired_range_difference
                     matrix.data += self.minValue
                     self.scaleToOriginalRange = True
-                    # diff_scale_factor = matrix.data.max() / max_value 
+                    # diff_scale_factor = matrix.data.max() / max_value
                     # if self.correctionOperator == '*':
                     #     correction_factors *= diff_scale_factor
                     # if self.correctionOperator == '/':
                     #     correction_factors /= diff_scale_factor
-
 
         cut_intervals = []
         time_start = time.time()
@@ -402,9 +401,9 @@ class Cool(MatrixFile, object):
                              metadata=self.hic_metadata,
                              temp_dir=local_temp_dir)
 
-        log.debug('info {}'.format(info))
-        # if self.appendData == 'w':
-        #     fileName = pFileName.split('::')[0]
-        #     with h5py.File(fileName, 'r+') as h5file:
-        #         h5file.attrs.update(info)
-        #         h5file.close()
+        # log.debug('info {}'.format(info))
+        if self.appendData == 'w':
+            fileName = pFileName.split('::')[0]
+            with h5py.File(fileName, 'r+') as h5file:
+                h5file.attrs.update(info)
+                h5file.close()
