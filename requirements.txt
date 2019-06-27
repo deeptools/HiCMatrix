@@ -1,7 +1,7 @@
-numpy >= 1.13.*
-scipy >= 1.1.*
-pandas >= 0.23.*
-pytables >= 3.4.*
-future = 0.16.*
-cooler = 0.8.3
-intervaltree = 2.1.*
+numpy >= 1.16.*
+scipy >= 1.2.*
+pandas >= 0.24.*
+pytables >= 3.5.*
+future = 0.17.*
+cooler = 0.8.5
+intervaltree = 3.0.*
