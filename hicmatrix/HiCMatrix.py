@@ -68,6 +68,11 @@ class hiCMatrix:
             log.debug('init time: {}'.format(time.time() - start_time))
             self.matrix, self.cut_intervals, self.nan_bins, \
                 self.correction_factors, self.distance_counts = self.matrixFileHandler.load()
+            # if len(self.matrix.data) == 0:
+            #     log.warning('No data for {}, not initialization of object. '.format(pChrnameList))
+            #     self.interval_trees = None
+            #     self.chrBinBoundaries = None
+            #     return
             log.debug('load time: {}'.format(time.time() - start_time))
             start_time = time.time()
 
@@ -104,6 +109,7 @@ class hiCMatrix:
     def save(self, pMatrixName, pSymmetric=True, pApplyCorrection=False, pHiCInfo=None):
         """ As an output format cooler and mcooler are supported.
         """
+
         if self.matrixFileHandler is None:
             fileType = 'cool'
             if pMatrixName.endswith('h5'):
@@ -958,12 +964,13 @@ class hiCMatrix:
         self.prev_to_remove = to_remove
 
     def get_chromosome_sizes(self):
-        chrom_sizes = OrderedDict()
-        for chrom, (start_bin, end_bin) in iteritems(self.chrBinBoundaries):
-            chrom, start, end, _ = self.cut_intervals[end_bin - 1]
-            chrom_sizes[chrom] = end
+        if self.chrBinBoundaries and len(self.chrBinBoundaries) > 0:
+            chrom_sizes = OrderedDict()
+            for chrom, (start_bin, end_bin) in iteritems(self.chrBinBoundaries):
+                chrom, start, end, _ = self.cut_intervals[end_bin - 1]
+                chrom_sizes[chrom] = end
 
-        return chrom_sizes
+            return chrom_sizes
 
     def intervalListToIntervalTree(self, interval_list):
         """
@@ -971,10 +978,12 @@ class hiCMatrix:
         this is transformed to a number of interval trees,
         one for each chromosome
         """
-
-        assert len(interval_list) > 0, "Interval list is empty"
         cut_int_tree = {}
         chrbin_boundaries = OrderedDict()
+        if len(interval_list) == 0:
+            log.warning("Interval list is empty")
+            return cut_int_tree, chrbin_boundaries
+        
         intval_id = 0
         chr_start_id = 0
         previous_chrom = None

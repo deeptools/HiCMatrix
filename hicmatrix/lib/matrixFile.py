@@ -23,8 +23,10 @@ class MatrixFile():
         log.error('Not implemented')
 
     def set_matrix_variables(self, pMatrix, pCutIntervals, pNanBins, pCorrectionFactors, pDistanceCounts):
+        log.debug('Seeting matrix variables')
         self.matrix = pMatrix
         self.cut_intervals = pCutIntervals
         self.nan_bins = pNanBins
         self.correction_factors = pCorrectionFactors
+
         self.distance_counts = pDistanceCounts
