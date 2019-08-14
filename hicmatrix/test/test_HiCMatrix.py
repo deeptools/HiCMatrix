@@ -366,11 +366,11 @@ def test_filterOutInterChrCounts():
     hic.fillLowerTriangle()
     hic.filterOutInterChrCounts()
 
-    filtered_matrix = np.matrix([[1, 8, 5, 0, 0],
-                                 [8, 4, 15, 0, 0],
-                                 [5, 15, 0, 0, 0],
-                                 [0, 0, 0, 0, 1],
-                                 [0, 0, 0, 1, 0]])
+    filtered_matrix = np.array([[1, 8, 5, 0, 0],
+                                [8, 4, 15, 0, 0],
+                                [5, 15, 0, 0, 0],
+                                [0, 0, 0, 0, 1],
+                                [0, 0, 0, 1, 0]])
 
     nt.assert_equal(hic.getMatrix(), filtered_matrix)
 
@@ -566,11 +566,11 @@ def test_reorderBins():
     nt.assert_equal(hic.getMatrix(), matrix)
 
     new_order = [0, 1, 3, 2, 4]
-    new_matrix = np.matrix([[1, 8, 3, 5, 0],
-                            [0, 4, 5, 15, 1],
-                            [0, 0, 0, 0, 1],
-                            [0, 0, 0, 0, 2],
-                            [0, 0, 0, 0, 0]])
+    new_matrix = np.array([[1, 8, 3, 5, 0],
+                           [0, 4, 5, 15, 1],
+                           [0, 0, 0, 0, 1],
+                           [0, 0, 0, 0, 2],
+                           [0, 0, 0, 0, 0]])
 
     hic.reorderBins(new_order)
 
@@ -582,8 +582,8 @@ def test_reorderBins():
 
     # order smaller than original matrix should delete unused ids
     small_order = [2, 3]
-    small_matrix = np.matrix([[0, 0],
-                              [0, 0]])
+    small_matrix = np.array([[0, 0],
+                             [0, 0]])
 
     hic.reorderBins(small_order)
 
@@ -614,9 +614,9 @@ def test_maskBins():
     nt.assert_equal(hic.getMatrix(), matrix)
     nt.assert_equal(hic.orig_bin_ids, [])
 
-    new_matrix = np.matrix([[0, 0, 2],
-                            [0, 0, 1],
-                            [0, 0, 0]])
+    new_matrix = np.array([[0, 0, 2],
+                           [0, 0, 1],
+                           [0, 0, 0]])
 
     masking_ids = [0, 1]
     hic.maskBins(masking_ids)
@@ -734,9 +734,9 @@ def test_restoreMaskedBins():
     masking_ids = [0, 1]
     hic.maskBins(masking_ids)
 
-    new_matrix = np.matrix([[0, 0, 2],
-                            [0, 0, 1],
-                            [0, 0, 0]])
+    new_matrix = np.array([[0, 0, 2],
+                           [0, 0, 1],
+                           [0, 0, 0]])
 
     nt.assert_equal(hic.getMatrix(), new_matrix)
     nt.assert_equal(sorted(hic.orig_bin_ids), sorted([0, 1, 2, 3, 4]))
@@ -744,11 +744,11 @@ def test_restoreMaskedBins():
     # and now restore masked bins
     hic.restoreMaskedBins()
 
-    result_matrix = np.matrix([[np.nan, np.nan, np.nan, np.nan, np.nan],
-                               [np.nan, np.nan, np.nan, np.nan, np.nan],
-                               [np.nan, np.nan, 0, 0, 2],
-                               [np.nan, np.nan, 0, 0, 1],
-                               [np.nan, np.nan, 0, 0, 0]])
+    result_matrix = np.array([[np.nan, np.nan, np.nan, np.nan, np.nan],
+                              [np.nan, np.nan, np.nan, np.nan, np.nan],
+                              [np.nan, np.nan, 0, 0, 2],
+                              [np.nan, np.nan, 0, 0, 1],
+                              [np.nan, np.nan, 0, 0, 0]])
 
     nt.assert_equal(hic.getMatrix(), result_matrix)
     nt.assert_equal(hic.orig_bin_ids, [])
@@ -827,11 +827,11 @@ def test_reorderMatrix():
     # reorder matrix
     hic.reorderMatrix(orig, dest)
 
-    new_matrix = np.matrix([[1, 3, 8, 5, 0],
-                            [0, 0, 0, 0, 1],
-                            [0, 5, 4, 15, 1],
-                            [0, 0, 0, 0, 2],
-                            [0, 0, 0, 0, 0]])
+    new_matrix = np.array([[1, 3, 8, 5, 0],
+                           [0, 0, 0, 0, 1],
+                           [0, 5, 4, 15, 1],
+                           [0, 0, 0, 0, 2],
+                           [0, 0, 0, 0, 0]])
 
     new_cut_intervals = [('a', 0, 10, 1), ('b', 30, 40, 1),
                          ('a', 10, 20, 1), ('a', 20, 30, 1), ('b', 40, 50, 1)]
@@ -862,11 +862,11 @@ def test_truncTrans():
     nt.assert_equal(hic.getMatrix(), matrix)
 
     # define expected outcome
-    new_matrix = np.matrix([[-1., 8., 5., 3., 0.],
-                            [np.nan, 4., 15., 5., 1.e+2],
-                            [0., 0., 0., 0., 2.e+3],
-                            [0., 0., 0., 0., 1.],
-                            [0., 0., 0., 0., 0.]])
+    new_matrix = np.array([[-1., 8., 5., 3., 0.],
+                           [np.nan, 4., 15., 5., 1.e+2],
+                           [0., 0., 0., 0., 2.e+3],
+                           [0., 0., 0., 0., 1.],
+                           [0., 0., 0., 0., 0.]])
 
     # truncTrans of matrix
     hic.truncTrans()
@@ -1023,11 +1023,11 @@ def test_fillLowerTriangle():
     hic.matrix = A
     hic.fillLowerTriangle()
     B = hic.matrix
-    test_matrix = np.matrix([[12, 5, 3, 2, 0],
-                             [5, 11, 4, 1, 1],
-                             [3, 4, 9, 6, 0],
-                             [2, 1, 6, 10, 0],
-                             [0, 1, 0, 0, 0]], dtype='i4')
+    test_matrix = np.array([[12, 5, 3, 2, 0],
+                            [5, 11, 4, 1, 1],
+                            [3, 4, 9, 6, 0],
+                            [2, 1, 6, 10, 0],
+                            [0, 1, 0, 0, 0]], dtype='i4')
 
     nt.assert_equal(B.todense(), test_matrix)
 

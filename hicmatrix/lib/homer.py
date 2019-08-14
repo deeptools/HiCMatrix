@@ -1,9 +1,10 @@
-from .matrixFile import MatrixFile
-from scipy.sparse import csr_matrix
-from builtins import super
-import gzip
 import logging
 log = logging.getLogger(__name__)
+
+import gzip
+from scipy.sparse import csr_matrix
+
+from .matrixFile import MatrixFile
 
 
 class Homer(MatrixFile, object):
