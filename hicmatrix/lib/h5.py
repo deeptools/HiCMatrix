@@ -1,18 +1,14 @@
 from os import unlink
 import os
 import logging
-from builtins import super
+log = logging.getLogger(__name__)
 
 import tables
 from scipy.sparse import csr_matrix, triu
 import numpy as np
-from past.builtins import zip
 
 from hicmatrix.utilities import toString
 from .matrixFile import MatrixFile
-
-
-log = logging.getLogger(__name__)
 
 
 class H5(MatrixFile, object):
@@ -48,7 +44,7 @@ class H5(MatrixFile, object):
                 else:
                     intvals[interval_part] = getattr(f.root.intervals, interval_part).read()
 
-            cut_intervals = zip(intvals['chr_list'], intvals['start_list'], intvals['end_list'], intvals['extra_list'])
+            cut_intervals = list(zip(intvals['chr_list'], intvals['start_list'], intvals['end_list'], intvals['extra_list']))
             assert len(cut_intervals) == matrix.shape[0], \
                 "Error loading matrix. Length of bin intervals ({}) is different than the " \
                 "size of the matrix ({})".format(len(cut_intervals), matrix.shape[0])

@@ -1,9 +1,10 @@
-from .matrixFile import MatrixFile
-from scipy.sparse import csr_matrix
-from builtins import super
 
 import logging
 log = logging.getLogger(__name__)
+
+from scipy.sparse import csr_matrix
+
+from .matrixFile import MatrixFile
 
 
 class Hicpro(MatrixFile, object):

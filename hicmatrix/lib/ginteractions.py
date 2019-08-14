@@ -1,9 +1,8 @@
-
-from .matrixFile import MatrixFile
 import logging
 log = logging.getLogger(__name__)
 from scipy.sparse import triu
-from builtins import super
+
+from .matrixFile import MatrixFile
 
 
 class Ginteractions(MatrixFile, object):

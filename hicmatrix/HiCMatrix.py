@@ -1,24 +1,9 @@
-from __future__ import division
-# from __future__ import unicode_literals
-from builtins import range
-from past.builtins import zip
-from six import iteritems
-
-# import os
 import sys
+import warnings
 from collections import OrderedDict
-
 import logging
 log = logging.getLogger(__name__)
 
-import warnings
-warnings.simplefilter(action="ignore", category=FutureWarning)
-warnings.filterwarnings(action="ignore", message="numpy.dtype size changed")
-warnings.filterwarnings(action="ignore", message="numpy.ndarray size changed")
-warnings.simplefilter(action='ignore', category=DeprecationWarning)
-warnings.simplefilter(action='ignore', category=ImportWarning)
-warnings.simplefilter(action='ignore', category=PendingDeprecationWarning)
-# warnings.simplefilter(action='ignore', category=tables.exceptions.FlavorWarning)
 
 import numpy as np
 from scipy.sparse import csr_matrix, dia_matrix, triu, tril
@@ -68,6 +53,11 @@ class hiCMatrix:
             log.debug('init time: {}'.format(time.time() - start_time))
             self.matrix, self.cut_intervals, self.nan_bins, \
                 self.correction_factors, self.distance_counts = self.matrixFileHandler.load()
+            # if len(self.matrix.data) == 0:
+            #     log.warning('No data for {}, not initialization of object. '.format(pChrnameList))
+            #     self.interval_trees = None
+            #     self.chrBinBoundaries = None
+            #     return
             log.debug('load time: {}'.format(time.time() - start_time))
             start_time = time.time()
 
@@ -104,6 +94,7 @@ class hiCMatrix:
     def save(self, pMatrixName, pSymmetric=True, pApplyCorrection=False, pHiCInfo=None):
         """ As an output format cooler and mcooler are supported.
         """
+
         if self.matrixFileHandler is None:
             fileType = 'cool'
             if pMatrixName.endswith('h5'):
@@ -346,7 +337,7 @@ class hiCMatrix:
                 return start_x + resi[np.argmin(np.abs(resi))]
             start = [snap_nearest_multiple(x, median) for x in start]
             end = [snap_nearest_multiple(x, median) for x in end]
-            cut_intervals = zip(chrom, start, end, extra)
+            cut_intervals = list(zip(chrom, start, end, extra))
             log.info('[getCountsByDistance] Bin size is not '
                      'homogeneous, setting \n'
                      'the bin distance to the median: {}\n'.format(median))
@@ -448,10 +439,14 @@ class hiCMatrix:
         else:
             chr_submatrix['all'] = self.matrix.tocoo()
             cut_intervals['all'] = self.cut_intervals
-            chrom_sizes['all'] = np.array([v[1] - v[0] for k, v in iteritems(self.chrBinBoundaries)])
+            # chrom_sizes['all'] = np.array([v[1] - v[0] for k, v in iteritems(self.chrBinBoundaries)])
+            chrom_sizes['all'] = np.array([v[1] - v[0] for k, v in self.chrBinBoundaries.items()])
+
             chrom_range['all'] = (0, self.matrix.shape[0])
 
-        for chrname, submatrix in iteritems(chr_submatrix):
+        # for chrname, submatrix in iteritems(chr_submatrix):
+        for chrname, submatrix in chr_submatrix.items():
+
             log.info("processing chromosome {}\n".format(chrname))
             if zscore is True:
                 # this step has to be done after tocoo()
@@ -958,12 +953,15 @@ class hiCMatrix:
         self.prev_to_remove = to_remove
 
     def get_chromosome_sizes(self):
-        chrom_sizes = OrderedDict()
-        for chrom, (start_bin, end_bin) in iteritems(self.chrBinBoundaries):
-            chrom, start, end, _ = self.cut_intervals[end_bin - 1]
-            chrom_sizes[chrom] = end
+        if self.chrBinBoundaries and len(self.chrBinBoundaries) > 0:
+            chrom_sizes = OrderedDict()
+            # for chrom, (start_bin, end_bin) in iteritems(self.chrBinBoundaries):
+            for chrom, (start_bin, end_bin) in self.chrBinBoundaries.items():
 
-        return chrom_sizes
+                chrom, start, end, _ = self.cut_intervals[end_bin - 1]
+                chrom_sizes[chrom] = end
+
+            return chrom_sizes
 
     def intervalListToIntervalTree(self, interval_list):
         """
@@ -971,10 +969,12 @@ class hiCMatrix:
         this is transformed to a number of interval trees,
         one for each chromosome
         """
-
-        assert len(interval_list) > 0, "Interval list is empty"
         cut_int_tree = {}
         chrbin_boundaries = OrderedDict()
+        if len(interval_list) == 0:
+            log.warning("Interval list is empty")
+            return cut_int_tree, chrbin_boundaries
+
         intval_id = 0
         chr_start_id = 0
         previous_chrom = None
