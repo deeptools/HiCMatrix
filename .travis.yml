@@ -1,37 +1,33 @@
 language: c
 sudo: true
-
 deploy:
   provider: pypi
   user: bgruening
   skip_cleanup: true
   password:
-    secure: AZVacwZdbN+vKXpZm/XjhRrlkJ9LBEn3Xzz7HkOo/yOk6M2rOHpjumsYzIB6YXnJGrR8ZdOJ3nDOwRaqq3LItXLcH05Pf6cajNwGzD3XLKFpqT+M+RYyki+hKjpEZtdKkkxas4FJQ1+x+yQkbYOjyWYz25xJOaAMOmyTmSZio8vK/0k/XJA+yg1uBHUc+xlP7MKygDItXDx0WVEKhbh+I/EqIi2D+SJFtgao/Y25qFzpplmXE5goe6eM4vAFrAzlahadfWggy2N+fx7gkMB5MOzxeUwKYbp7d2qftnSsBO+9P1Bh78g1nBw1MH3a+zqCGeMTmdbU1VdZUXuUsc5aiEL2lVcYOcB499rmssLuS5FALrtVxmEVMRVd/TQD8BOTmZIc7msuoviNt/HChEN6ldkNCHDh1paAnSMsbSmvKmFKr4rXkQNhvKa1D+78MtypPdxgt5cap+WMxGou4+WpzQ2OYfCrcFLWPwIyyBZ4tUr5xXX84AOmyD2OopbFq/1k1wkBvITWexncxxHdFQfCmzO5lDLruWKzr5FyrrBAgZERveqy5PHMp6v8teHfHTVnUMTuB2LZFltBdJL4U+bsOKy0WColpcppBo/kbvSQJY1YgMPuYBRrK1P1r0NkP83kywoAFwC0uMjfBvPcbYGQJHLLRYUYlDDmdao+sbMF6u8=
+    secure: IzZX87uHWkm+DxPVzrkvxHEPi2xwbJPZv3ekDYq1VNOU0hMLKFysq6A4vrrjLan3TPo+W9NeyUFzH9ViwaspWHAGLflWMI9IsT6omuAVZDCvV5lkyx0MQviY5z3pLyz+x2B7qCo+5J7ZJ9qWoldY1N0eXCFHp01SWPmDFYPmculeVn2ERhy17XPr8FF+G1wnW3NUvNTrMAzGyLtN5Mpr9FWrZX2QniBsFSOB2grMZTVgiqSzTnKhRqZglRdJelVdx8+ObBBbD6OzQFa1PIaJFwqt4ViMhpVfKOYrEVOsDMIHt4S4wA7ABt1uVDEih8xrTRZNbWhu70Ta7JnCtkky2tbQf/C18G1Q2GaiXEMMymPe8MVszGCkQ7eyO5gdYRnvMtP1smgUcVL7kNMAZV8w05BNmB6akUNiKvUPtDjpNkoijBhWBuRHAppJt8/E6r1GtKQhq+RLzyh1EHdt3ScVWgYFW1ZpGLlkPhjNvOTLn47hIIIwvuErawC5B1QZL1CwZHLY6FlVDKpdkjJpxbeLgFdMHU9F1q1Guz8sb9tci16nQrMw1fjjOv3OKabTLdsPbQBs7YrBs3SBDaHF0jx4m0FkziqCxmHZWLolu5/OYRajr3BoGGgDVdNTD7lCFaQyzpGy/PWjyKVJCGW8rsmXrZVUdUe6H0iZwOVwgv8LD0w=
   on:
     tags: true
-  distributions: "sdist bdist_wheel"
+  distributions: sdist bdist_wheel
   python:
-    - 3.6
-    - 3.7
-  
-
+  - 3.6
+  - 3.7
 env:
-  - TRAVIS_PYTHON_VERSION=3.6
-  - TRAVIS_PYTHON_VERSION=3.7
+- TRAVIS_PYTHON_VERSION=3.6
+- TRAVIS_PYTHON_VERSION=3.7
 os:
 - linux
 - osx
-
 stages:
 - lint
 - test
-
 before_install:
-
 - export HIC_TEST_DATA_DIR="`pwd`/hicmatrix/test/test_data/"
 - echo $HIC_TEST_DATA_DIR
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then curl https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -o miniconda.sh ; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then curl https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -o miniconda.sh ; fi
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then curl https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+  -o miniconda.sh ; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then curl https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
+  -o miniconda.sh ; fi
 - bash miniconda.sh -b -p $HOME/miniconda
 - PATH_WITHOUT_CONDA="$PATH"
 - export PATH="$HOME/miniconda/bin:$PATH"
@@ -39,15 +35,12 @@ before_install:
 - conda config --set always_yes yes --set changeps1 no
 - conda update -q conda
 - conda info -a
-
 install:
 - conda install --yes -c conda-forge -c bioconda python=$TRAVIS_PYTHON_VERSION --file
   requirements.txt
 - conda install --yes -c conda-forge -c bioconda pytest
 - conda install --yes flake8
 - python setup.py install
-
 script:
 - flake8 . --exclude=.venv,.build,planemo_test_env,build --ignore=E501,F401,F403,E402,F999,F405,E712
 - py.test hicmatrix/test/ --capture=sys
-
