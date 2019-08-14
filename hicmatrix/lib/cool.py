@@ -39,6 +39,7 @@ class Cool(MatrixFile, object):
         self.hic2cool_version = None
         self.hicmatrix_version = None
         self.scaleToOriginalRange = None
+        # self.correction_factors = None
 
     def getInformationCoolerBinNames(self):
         return cooler.Cooler(self.matrixFileName).bins().columns.values
@@ -65,6 +66,8 @@ class Cool(MatrixFile, object):
             exit()
         log.debug('self.chrnameList {}'.format(self.chrnameList))
         if self.chrnameList is None:
+            log.debug('muh 69')
+
             matrixDataFrame = cooler_file.matrix(balance=False, sparse=True, as_pixels=True)
             used_dtype = np.int32
             if np.iinfo(np.int32).max < cooler_file.info['nbins']:
@@ -93,12 +96,6 @@ class Cool(MatrixFile, object):
                 del _instances
                 del _features
 
-            # log.debug('max feature {}'.format(np.max(features)))
-            # log.debug('max instance {}'.format(np.max(instances)))
-
-            # log.debug('cooler_file.info[\'nbins\'] {}'.format(cooler_file.info['nbins']))
-            # log.debug('cooler_file.info[\'nbins\'] {}'.format(type(cooler_file.info['nbins'])))
-
             matrix = csr_matrix((data, (instances, features)), shape=(np.int(cooler_file.info['nbins']), np.int(cooler_file.info['nbins'])), dtype=count_dtype)
             self.minValue = data.min()
             self.maxValue = data.max()
@@ -109,10 +106,15 @@ class Cool(MatrixFile, object):
         else:
             if len(self.chrnameList) == 1:
                 try:
-                    # self.chrnameList[0]
+                    log.debug('Load data')
                     matrix = cooler_file.matrix(balance=False, sparse=True).fetch(self.chrnameList[0]).tocsr()
-                    self.minValue = matrix.data.min()
-                    self.maxValue = matrix.data.max()
+                    # handle the case of an empty csr matrix
+                    if len(matrix.data) == 0:
+                        self.minValue = 0
+                        self.maxValue = 0
+                    else:
+                        self.minValue = matrix.data.min()
+                        self.maxValue = matrix.data.max()
                 except ValueError:
                     exit("Wrong chromosome format. Please check UCSC / ensembl notation.")
             else:
@@ -140,76 +142,77 @@ class Cool(MatrixFile, object):
             # apply correction factors to matrix
             # a_i,j = a_i,j * c_i *c_j
             matrix.eliminate_zeros()
-            matrix.data = matrix.data.astype(float)
+            if len(matrix.data) > 1:
 
-            correction_factors = convertNansToOnes(np.array(correction_factors_data_frame.values).flatten())
-            # apply only if there are not only 1's
-            if np.sum(correction_factors) != len(correction_factors):
-                matrix.sort_indices()
+                matrix.data = matrix.data.astype(float)
 
-                instances, features = matrix.nonzero()
-                instances_factors = correction_factors[instances]
-                features_factors = correction_factors[features]
+                correction_factors = convertNansToOnes(np.array(correction_factors_data_frame.values).flatten())
+                # apply only if there are not only 1's
+                if np.sum(correction_factors) != len(correction_factors):
+                    matrix.sort_indices()
 
-                if self.correctionOperator is None:
-                    if 'generated-by' in cooler_file.info:
-                        log.debug('cooler_file.info[\'generated-by\'] {} {}'.format(cooler_file.info['generated-by'], type(cooler_file.info['generated-by'])))
-                        generated_by = toString(cooler_file.info['generated-by'])
-                        if 'hic2cool' in generated_by:
+                    instances, features = matrix.nonzero()
+                    instances_factors = correction_factors[instances]
+                    features_factors = correction_factors[features]
 
-                            self.hic2cool_version = generated_by.split('-')[1]
-                            if self.hic2cool_version >= '0.5':
-                                log.debug('0.5')
-                                self.correctionOperator = '/'
+                    if self.correctionOperator is None:
+                        if 'generated-by' in cooler_file.info:
+                            log.debug('cooler_file.info[\'generated-by\'] {} {}'.format(cooler_file.info['generated-by'], type(cooler_file.info['generated-by'])))
+                            generated_by = toString(cooler_file.info['generated-by'])
+                            if 'hic2cool' in generated_by:
+
+                                self.hic2cool_version = generated_by.split('-')[1]
+                                if self.hic2cool_version >= '0.5':
+                                    log.debug('0.5')
+                                    self.correctionOperator = '/'
+                                else:
+                                    log.debug('0.4')
+
+                                    self.correctionOperator = '*'
                             else:
-                                log.debug('0.4')
-
                                 self.correctionOperator = '*'
+
+                            log.debug('hic2cool: {}'.format(self.hic2cool_version))
+                            log.debug('self.correctionOperator : {}'.format(self.correctionOperator))
+
+                            # elif 'hicmatrix' in generated_by:
+
+                            #     self.hicmatrix_version = generated_by.split('-')[1]
+                            #     if self.hicmatrix_version >= '8':
+                            #         self.correctionOperator = '/'
+                            #     else:
+                            #         self.correctionOperator = '*'
                         else:
                             self.correctionOperator = '*'
 
-                        log.debug('hic2cool: {}'.format(self.hic2cool_version))
-                        log.debug('self.correctionOperator : {}'.format(self.correctionOperator))
+                    instances_factors *= features_factors
+                    log.debug('hic2cool: {}'.format(self.hic2cool_version))
+                    log.debug('self.correctionOperator: {}'.format(self.correctionOperator))
+                    if self.correctionOperator == '*':
+                        matrix.data *= instances_factors
+                    elif self.correctionOperator == '/':
+                        matrix.data /= instances_factors
 
-                        # elif 'hicmatrix' in generated_by:
-
-                        #     self.hicmatrix_version = generated_by.split('-')[1]
-                        #     if self.hicmatrix_version >= '8':
-                        #         self.correctionOperator = '/'
-                        #     else:
-                        #         self.correctionOperator = '*'
-                    else:
-                        self.correctionOperator = '*'
-
-                instances_factors *= features_factors
-                log.debug('hic2cool: {}'.format(self.hic2cool_version))
-                log.debug('self.correctionOperator: {}'.format(self.correctionOperator))
-                if self.correctionOperator == '*':
-                    matrix.data *= instances_factors
-                elif self.correctionOperator == '/':
-                    matrix.data /= instances_factors
-
-                # if self.scaleToOriginalRange is not None:
-                min_value = matrix.data.min()
-                max_value = matrix.data.max()
-                # check if max smaller one or if not same mangnitude
-                if max_value < 1 or (np.absolute(int(math.log10(max_value))  - int(math.log10(self.maxValue))) > 1):
-                    desired_range_difference = self.maxValue - self.minValue
-                    
+                    # if self.scaleToOriginalRange is not None:
                     min_value = matrix.data.min()
                     max_value = matrix.data.max()
+                    # check if max smaller one or if not same mangnitude
+                    if max_value < 1 or (np.absolute(int(math.log10(max_value)) - int(math.log10(self.maxValue))) > 1):
+                        desired_range_difference = self.maxValue - self.minValue
 
-                    matrix.data = (matrix.data - min_value)
-                    matrix.data /= (max_value - min_value)
-                    matrix.data *= desired_range_difference
-                    matrix.data += self.minValue
-                    self.scaleToOriginalRange = True
-                    # diff_scale_factor = matrix.data.max() / max_value 
-                    # if self.correctionOperator == '*':
-                    #     correction_factors *= diff_scale_factor
-                    # if self.correctionOperator == '/':
-                    #     correction_factors /= diff_scale_factor
+                        min_value = matrix.data.min()
+                        max_value = matrix.data.max()
 
+                        matrix.data = (matrix.data - min_value)
+                        matrix.data /= (max_value - min_value)
+                        matrix.data *= desired_range_difference
+                        matrix.data += self.minValue
+                        self.scaleToOriginalRange = True
+                        # diff_scale_factor = matrix.data.max() / max_value
+                        # if self.correctionOperator == '*':
+                        #     correction_factors *= diff_scale_factor
+                        # if self.correctionOperator == '/':
+                        #     correction_factors /= diff_scale_factor
 
         cut_intervals = []
         time_start = time.time()
@@ -271,8 +274,6 @@ class Cool(MatrixFile, object):
         # instead of handling this before.
         bins_data_frame = pd.DataFrame(self.cut_intervals, columns=['chrom', 'start', 'end', 'interactions']).drop('interactions', axis=1)
         dtype_pixel = {'bin1_id': np.int32, 'bin2_id': np.int32, 'count': np.int32}
-        log.debug('hic2cool: {}'.format(self.hic2cool_version))
-        log.debug('self.correctionOperator: {}'.format(self.correctionOperator))
         if self.correction_factors is not None and pApplyCorrection:
             dtype_pixel['weight'] = np.float32
             if (self.hic2cool_version is not None and self.hic2cool_version >= '0.5') or self.fileWasH5:
@@ -324,6 +325,9 @@ class Cool(MatrixFile, object):
             features_factors = None
 
             self.matrix.eliminate_zeros()
+
+        log.debug('self.correction_factors {}'.format(self.correction_factors))
+        log.debug('pApplyCorrection {}'.format(pApplyCorrection))
 
         if self.correction_factors is not None and pApplyCorrection is False:
             dtype_pixel['weight'] = np.float32
@@ -402,9 +406,9 @@ class Cool(MatrixFile, object):
                              metadata=self.hic_metadata,
                              temp_dir=local_temp_dir)
 
-        log.debug('info {}'.format(info))
-        # if self.appendData == 'w':
-        #     fileName = pFileName.split('::')[0]
-        #     with h5py.File(fileName, 'r+') as h5file:
-        #         h5file.attrs.update(info)
-        #         h5file.close()
+        # log.debug('info {}'.format(info))
+        if self.appendData == 'w':
+            fileName = pFileName.split('::')[0]
+            with h5py.File(fileName, 'r+') as h5file:
+                h5file.attrs.update(info)
+                h5file.close()

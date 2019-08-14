@@ -112,7 +112,7 @@ def test_load_hicpro(capsys):
     test_list[827] = 5.42079
     test_list[1263] = 5.122642
 
-    test_matrix = np.matrix([test_list])
+    test_matrix = np.array([test_list])
 
     # and check for shape and values
     assert matrix[0].todense().shape == test_matrix.shape
@@ -161,7 +161,7 @@ def test_load_cool(capsys):
     matrix, cut_intervals, nan_bins, distance_counts, correction_factors = fh.load()
 
     # test matrix
-    test_matrix = np.matrix([[0. for i in range(11104)]])
+    test_matrix = np.array([[0. for i in range(11104)]])
     nt.assert_almost_equal(matrix[0].todense(), test_matrix)
 
     test_cut_intervals = [('X', 0, 2200, 1.0), ('X', 2200, 4702, 1.0), ('X', 4702, 7060, 1.0),
