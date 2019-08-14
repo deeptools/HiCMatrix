@@ -3,6 +3,7 @@ sudo: true
 
 env:
   - TRAVIS_PYTHON_VERSION=3.6
+  - TRAVIS_PYTHON_VERSION=3.7
 os:
   - linux
   - osx
@@ -14,8 +15,8 @@ stages:
 before_install:
   - export HIC_TEST_DATA_DIR="`pwd`/hicmatrix/test/test_data/"
   - echo $HIC_TEST_DATA_DIR
-  - if [[ "$TRAVIS_OS_NAME" == "linux" && "$TRAVIS_PYTHON_VERSION" == "3.6" ]]; then curl https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -o miniconda.sh ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" && "$TRAVIS_PYTHON_VERSION" == "3.6" ]]; then curl https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -o miniconda.sh ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then curl https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -o miniconda.sh ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then curl https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -o miniconda.sh ; fi
   - bash miniconda.sh -b -p $HOME/miniconda
   - PATH_WITHOUT_CONDA="$PATH"
   - export PATH="$HOME/miniconda/bin:$PATH"

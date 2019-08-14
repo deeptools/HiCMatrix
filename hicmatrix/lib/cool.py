@@ -1,24 +1,23 @@
 import os
-import cooler
 import logging
 log = logging.getLogger(__name__)
 from datetime import datetime
 from copy import deepcopy
-import six
 
+import math
+import time
+
+import cooler
 import h5py
 import numpy as np
 from scipy.sparse import triu, csr_matrix
 import pandas as pd
-from past.builtins import zip
-from builtins import super
-from .matrixFile import MatrixFile
-import math
-import time
 
 from hicmatrix.utilities import toString, toBytes
 from hicmatrix.utilities import convertNansToOnes
 from hicmatrix._version import __version__
+
+from .matrixFile import MatrixFile
 
 
 class Cool(MatrixFile, object):
@@ -406,7 +405,6 @@ class Cool(MatrixFile, object):
                              metadata=self.hic_metadata,
                              temp_dir=local_temp_dir)
 
-        # log.debug('info {}'.format(info))
         if self.appendData == 'w':
             fileName = pFileName.split('::')[0]
             with h5py.File(fileName, 'r+') as h5file:
