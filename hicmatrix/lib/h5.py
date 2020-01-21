@@ -29,9 +29,9 @@ class H5(MatrixFile, object):
             try:
                 for matrix_part in ('data', 'indices', 'indptr', 'shape'):
                     parts[matrix_part] = getattr(f.root.matrix, matrix_part).read()
-            except Exception:
+            except Exception as e:
                 log.info('No h5 file. Please check parameters concerning the file type!')
-                exit(1)
+                e
             matrix = csr_matrix(tuple([parts['data'], parts['indices'], parts['indptr']]),
                                 shape=parts['shape'])
             # matrix = hiCMatrix.fillLowerTriangle(matrix)
