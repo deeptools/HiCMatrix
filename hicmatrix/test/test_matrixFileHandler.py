@@ -183,6 +183,7 @@ def test_load_cool(capsys):
 
     assert distance_counts is None
 
+
 def test_load_cool2(capsys):
     # create matrixFileHandler instance with filetype 'cool'
     pMatrixFile = ROOT + 'one_interaction_4chr.cool'
@@ -205,14 +206,13 @@ def test_load_cool2(capsys):
     test_matrix[0][3] = 1
     nt.assert_almost_equal(matrix[0].todense(), test_matrix)
 
-    test_cut_intervals = sum([[('chr1', i*bin_size, (i + 1) * bin_size, 1.0) for i in range(3909)],
+    test_cut_intervals = sum([[('chr1', i * bin_size, (i + 1) * bin_size, 1.0) for i in range(3909)],
                              [('chr1', 195450000, 195471971, 1.0)],
-                             [('chrX', i*bin_size, (i + 1) * bin_size, 1.0) for i in range(3420)],
+                             [('chrX', i * bin_size, (i + 1) * bin_size, 1.0) for i in range(3420)],
                              [('chrX', 171000000, 171031299, 1.0)],
-                             [('chrY', i*bin_size, (i + 1) * bin_size, 1.0) for i in range(1834)],
+                             [('chrY', i * bin_size, (i + 1) * bin_size, 1.0) for i in range(1834)],
                              [('chrY', 91700000, 91744698, 1.0)],
                              [('chrM', 0, 16299, 1.0)]], [])
-                         
 
     for index, tup in enumerate(cut_intervals):
         for ind, element in enumerate(tup):
@@ -223,6 +223,7 @@ def test_load_cool2(capsys):
 
     assert distance_counts is None
     assert correction_factors is None
+
 
 def test_save_cool():
     cool_outfile = outfile + '.cool'

@@ -1154,4 +1154,3 @@ def test_create_from_cool():
     hic_ma.maskBins(hic_ma.nan_bins)
     assert hic_ma.matrix.shape == (1, 1)
     assert hic_ma.getBinSize() == 50000
-
