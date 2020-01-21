@@ -218,9 +218,8 @@ def test_load_cool2(capsys):
         for ind, element in enumerate(tup):
             assert element == test_cut_intervals[index][ind]
 
-    # For the moment this is failing:
-    # test_nan_bins = [0, 1, 2, 4]
-    # nt.assert_almost_equal(nan_bins[:4], test_nan_bins)
+    test_nan_bins = [0, 1, 2, 4]
+    nt.assert_almost_equal(nan_bins[:4], test_nan_bins)
 
     assert distance_counts is None
     assert correction_factors is None
