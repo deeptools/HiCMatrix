@@ -183,6 +183,47 @@ def test_load_cool(capsys):
 
     assert distance_counts is None
 
+def test_load_cool2(capsys):
+    # create matrixFileHandler instance with filetype 'cool'
+    pMatrixFile = ROOT + 'one_interaction_4chr.cool'
+    # The interaction is:
+    # chr1	10000	chr1	200000
+    bin_size = 50000
+    # So there should be a 1 between the bin 0 and the bin 3
+    fh = MatrixFileHandler(pFileType='cool', pMatrixFile=pMatrixFile)
+    assert fh is not None
+
+    # load data
+    matrix, cut_intervals, nan_bins, distance_counts, correction_factors = fh.load()
+
+    # test data
+    nt.assert_almost_equal(matrix.data, np.array([1]))
+
+    # test matrix
+    test_matrix = np.array([[0 for i in range(9167)]])
+    nt.assert_almost_equal(matrix[3].todense(), test_matrix)
+    test_matrix[0][3] = 1
+    nt.assert_almost_equal(matrix[0].todense(), test_matrix)
+
+    test_cut_intervals = sum([[('chr1', i*bin_size, (i + 1) * bin_size, 1.0) for i in range(3909)],
+                             [('chr1', 195450000, 195471971, 1.0)],
+                             [('chrX', i*bin_size, (i + 1) * bin_size, 1.0) for i in range(3420)],
+                             [('chrX', 171000000, 171031299, 1.0)],
+                             [('chrY', i*bin_size, (i + 1) * bin_size, 1.0) for i in range(1834)],
+                             [('chrY', 91700000, 91744698, 1.0)],
+                             [('chrM', 0, 16299, 1.0)]], [])
+                         
+
+    for index, tup in enumerate(cut_intervals):
+        for ind, element in enumerate(tup):
+            assert element == test_cut_intervals[index][ind]
+
+    # For the moment this is failing:
+    # test_nan_bins = [0, 1, 2, 4]
+    # nt.assert_almost_equal(nan_bins[:4], test_nan_bins)
+
+    assert distance_counts is None
+    assert correction_factors is None
 
 def test_save_cool():
     cool_outfile = outfile + '.cool'
