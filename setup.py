@@ -111,7 +111,7 @@ setup(
     include_package_data=True,
     package_dir={'hicmatrix': 'hicmatrix'},
     url='https://github.com/deeptools/HiCMatrix',
-    license='LICENSE.txt',
+    license='LICENSE',
     description='Helper package which implements HiCMatrix class for HiCExplorer and pyGenomeTracks',
     long_description=open('README.rst').read(),
     classifiers=[
