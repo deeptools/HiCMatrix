@@ -226,7 +226,7 @@ class Cool(MatrixFile, object):
         try:
             shape = matrix.shape[0] if matrix.shape[0] < matrix.shape[1] else matrix.shape[1]
             nan_bins = np.arange(shape)
-            nan_bins = np.setdiff1d(nan_bins, matrix.indices[:-1])
+            nan_bins = np.setdiff1d(nan_bins, matrix.indices)
 
         except Exception:
             nan_bins = None

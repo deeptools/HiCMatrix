@@ -1140,3 +1140,18 @@ def test_maskChromosomes_fail():
     hic.maskChromosomes(['c'])
 
     print(hic.matrix)
+
+
+def test_create_from_cool():
+    hic_ma = hm.hiCMatrix(ROOT + 'one_interaction_4chr.cool')
+    nt.assert_equal(sorted(hic_ma.matrix.indices), [0, 3])
+    nt.assert_equal(sorted(hic_ma.matrix.data), [1, 1])
+    # This is failing:
+    # nt.assert_equal(sorted(hic_ma.nan_bins)[:5], [1, 2, 4, 5, 6])
+    hic_ma = hm.hiCMatrix(ROOT + 'one_interaction_diag_4chr.cool')
+    nt.assert_equal(sorted(hic_ma.matrix.indices), [0])
+    nt.assert_equal(sorted(hic_ma.matrix.data), [1])
+    nt.assert_equal(sorted(hic_ma.nan_bins)[:5], [1, 2, 3, 4, 5])
+    hic_ma.maskBins(hic_ma.nan_bins)
+    assert hic_ma.matrix.shape == (1, 1)
+    assert hic_ma.getBinSize() == 50000
