@@ -209,7 +209,13 @@ class hiCMatrix:
         This functions return the start and end bin indices in the matrix
         """
 
-        return self.chrBinBoundaries[chrName]
+        if chrName in self.chrBinBoundaries:
+            return self.chrBinBoundaries[chrName]
+        else:
+            raise Exception("chrName: {} not found in chrBinBoundaries"
+                            "valid chromosomes are: {}"
+                            .format(chrName, self.chrBinBoundaries.keys()))
+            return None, None
 
     def getChrNames(self):
         """
@@ -223,7 +229,12 @@ class hiCMatrix:
         given a bin, it returns the chromosome name,
         start position and end position
         """
-        return self.cut_intervals[binIndex]
+        if binIndex < len(self.cut_intervals):
+            return self.cut_intervals[binIndex]
+        else:
+            raise Exception("binIndex: {} not found".format(binIndex))
+            return None
+            
 
     def getRegionBinRange(self, chrname, startpos, endpos):
         """
@@ -251,14 +262,12 @@ class hiCMatrix:
             log.exception("chromosome: {} name not found in matrix".format(chrname))
             log.exception("valid names are:")
             log.exception(self.interval_trees.keys())
-            ke
         try:
             startpos = int(startpos)
             endpos = int(endpos)
         except ValueError as ve:
-            log.exeption("{} or {}  are not valid "
+            log.exception("{} or {}  are not valid "
                          "position values.".format(startpos, endpos))
-            ve
 
         try:
 
