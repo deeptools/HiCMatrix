@@ -234,7 +234,6 @@ class hiCMatrix:
         else:
             raise Exception("binIndex: {} not found".format(binIndex))
             return None
-            
 
     def getRegionBinRange(self, chrname, startpos, endpos):
         """
@@ -260,14 +259,17 @@ class hiCMatrix:
                                 .format(chrname, self.interval_trees.keys()))
         except KeyError as ke:
             log.exception("chromosome: {} name not found in matrix".format(chrname))
-            log.exception("valid names are:")
+            log.exception("valid names are: ")
             log.exception(self.interval_trees.keys())
+            log.exception(str(ke))
+
         try:
             startpos = int(startpos)
             endpos = int(endpos)
         except ValueError as ve:
             log.exception("{} or {}  are not valid "
-                         "position values.".format(startpos, endpos))
+                          "position values.".format(startpos, endpos))
+            log.exception(str(ve))
 
         try:
 
