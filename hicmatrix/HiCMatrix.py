@@ -87,8 +87,7 @@ class hiCMatrix:
         elif pMatrixFile is None:
             log.debug('Only init object, no matrix given.')
         else:
-            log.error('matrix file not given')
-            sys.exit(1)
+            raise Exception('matrix file not given')
         log.debug('data loaded!')
 
     def save(self, pMatrixName, pSymmetric=True, pApplyCorrection=False, pHiCInfo=None):
@@ -170,8 +169,14 @@ class hiCMatrix:
         """
         if self.bin_size is None:
             chrom, start, end, extra = zip(*self.cut_intervals)
-            median = int(np.median(np.diff(start)))
             diff = np.array(end) - np.array(start)
+            # If there is only one bin:
+            if len(diff) == 1:
+                self.bin_size = diff[0]
+                return self.bin_size
+            # If there are more bins, the diff will be compared
+            # to the median of the differences between starts
+            median = int(np.median(np.diff(start)))
 
             # check if the bin size is
             # homogeneous
@@ -204,7 +209,13 @@ class hiCMatrix:
         This functions return the start and end bin indices in the matrix
         """
 
-        return self.chrBinBoundaries[chrName]
+        if chrName in self.chrBinBoundaries:
+            return self.chrBinBoundaries[chrName]
+        else:
+            raise Exception("chrName: {} not found in chrBinBoundaries"
+                            "valid chromosomes are: {}"
+                            .format(chrName, self.chrBinBoundaries.keys()))
+            return None, None
 
     def getChrNames(self):
         """
@@ -218,7 +229,11 @@ class hiCMatrix:
         given a bin, it returns the chromosome name,
         start position and end position
         """
-        return self.cut_intervals[binIndex]
+        if binIndex < len(self.cut_intervals):
+            return self.cut_intervals[binIndex]
+        else:
+            raise Exception("binIndex: {} not found".format(binIndex))
+            return None
 
     def getRegionBinRange(self, chrname, startpos, endpos):
         """
@@ -239,22 +254,22 @@ class hiCMatrix:
             # chr_end_pos = chromosome_size[chrname]
             # self.interval_trees[chrname]
             if chrname not in self.interval_trees:
-                log.exception("chromosome: {} name not found in matrix".format(chrname))
-                log.exception("valid names are:")
-                exit(1)
-        except KeyError:
-
+                raise Exception("chromosome: {} name not found in matrix"
+                                "valid names are: {}"
+                                .format(chrname, self.interval_trees.keys()))
+        except KeyError as ke:
             log.exception("chromosome: {} name not found in matrix".format(chrname))
-            log.exception("valid names are:")
-            # log.exception(list(self.interval_trees))
-            exit(1)
+            log.exception("valid names are: ")
+            log.exception(self.interval_trees.keys())
+            log.exception(str(ke))
+
         try:
             startpos = int(startpos)
             endpos = int(endpos)
-        except ValueError:
-            log.exeption("{} or {}  are not valid "
-                         "position values.".format(startpos, endpos))
-            exit(1)
+        except ValueError as ve:
+            log.exception("{} or {}  are not valid "
+                          "position values.".format(startpos, endpos))
+            log.exception(str(ve))
 
         try:
 
@@ -379,7 +394,7 @@ class hiCMatrix:
 
         if maxdepth:
             if maxdepth < binsize:
-                exit("Please specify a maxDepth larger than bin size ({})".format(binsize))
+                raise Exception("Please specify a maxDepth larger than bin size ({})".format(binsize))
 
             max_depth_in_bins = int(float(maxdepth * 1.5) / binsize)
             # work only with the upper matrix
@@ -714,8 +729,8 @@ class hiCMatrix:
         for chrName in new_chr_order:
             # check that the chromosome names are valid
             if chrName not in self.chrBinBoundaries:
-                exit("Chromosome name '{}' not found. Please check the correct spelling "
-                     "of the chromosomes and try again".format(chrName))
+                raise Exception("Chromosome name '{}' not found. Please check the correct spelling "
+                                "of the chromosomes and try again".format(chrName))
             orig = self.chrBinBoundaries[chrName]
             new_order.extend(list(range(orig[0], orig[1])))
         self.reorderBins(new_order)
@@ -752,8 +767,8 @@ class hiCMatrix:
         for chromosome in pChromosomeList:
             # check that the chromosome names are valid
             if chromosome not in self.chrBinBoundaries:
-                exit("Chromosome name '{}' not found. Please check the correct spelling "
-                     "of the chromosomes and try again".format(chromosome))
+                raise Exception("Chromosome name '{}' not found. Please check the correct spelling "
+                                "of the chromosomes and try again".format(chromosome))
             orig = self.chrBinBoundaries[chromosome]
             mask_ids.extend(list(range(orig[0], orig[1])))
         self.maskBins(mask_ids)

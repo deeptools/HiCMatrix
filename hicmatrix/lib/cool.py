@@ -58,11 +58,11 @@ class Cool(MatrixFile, object):
                 self.hic_metadata = None
             self.cool_info = deepcopy(cooler_file.info)
             # log.debug("cooler_file.info {}".format(cooler_file.info))
-        except Exception:
+        except Exception as e:
             log.info("Could not open cooler file. Maybe the path is wrong or the given node is not available.")
             log.info('The following file was tried to open: {}'.format(self.matrixFileName))
             log.info("The following nodes are available: {}".format(cooler.fileops.list_coolers(self.matrixFileName.split("::")[0])))
-            exit()
+            e
         log.debug('self.chrnameList {}'.format(self.chrnameList))
         if self.chrnameList is None:
             log.debug('muh 69')
@@ -114,10 +114,11 @@ class Cool(MatrixFile, object):
                     else:
                         self.minValue = matrix.data.min()
                         self.maxValue = matrix.data.max()
-                except ValueError:
-                    exit("Wrong chromosome format. Please check UCSC / ensembl notation.")
+                except ValueError as ve:
+                    log.exception("Wrong chromosome format. Please check UCSC / ensembl notation.")
+                    ve
             else:
-                exit("Operation to load more as one region is not supported.")
+                raise Exception("Operation to load more as one region is not supported.")
 
         cut_intervals_data_frame = None
         correction_factors_data_frame = None
@@ -129,7 +130,7 @@ class Cool(MatrixFile, object):
                 if self.correctionFactorTable in cut_intervals_data_frame:
                     correction_factors_data_frame = cut_intervals_data_frame[self.correctionFactorTable]
             else:
-                exit("Operation to load more than one chr from bins is not supported.")
+                raise Exception("Operation to load more than one chr from bins is not supported.")
         else:
             if self.applyCorrectionLoad and self.correctionFactorTable in cooler_file.bins():
                 correction_factors_data_frame = cooler_file.bins()[[self.correctionFactorTable]][:]
@@ -225,7 +226,7 @@ class Cool(MatrixFile, object):
         try:
             shape = matrix.shape[0] if matrix.shape[0] < matrix.shape[1] else matrix.shape[1]
             nan_bins = np.arange(shape)
-            nan_bins = np.setdiff1d(nan_bins, matrix.indices[:-1])
+            nan_bins = np.setdiff1d(nan_bins, matrix.indices)
 
         except Exception:
             nan_bins = None
