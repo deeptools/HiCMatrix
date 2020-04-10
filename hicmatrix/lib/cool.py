@@ -372,12 +372,12 @@ class Cool(MatrixFile, object):
         if 'bin-type' in info:
             del info['bin-type']
 
-        info['format'] = np.string_('HDF5::Cooler')
-        info['format-url'] = np.string_('https://github.com/mirnylab/cooler')
-        info['generated-by'] = np.string_('HiCMatrix-' + __version__)
-        info['generated-by-cooler-lib'] = np.string_('cooler-' + cooler.__version__)
+        info['format'] = str('HDF5::Cooler')
+        info['format-url'] = str('https://github.com/mirnylab/cooler')
+        info['generated-by'] = str('HiCMatrix-' + __version__)
+        info['generated-by-cooler-lib'] = str('cooler-' + cooler.__version__)
 
-        info['tool-url'] = np.string_('https://github.com/deeptools/HiCMatrix')
+        info['tool-url'] = str('https://github.com/deeptools/HiCMatrix')
 
         # info['nchroms'] = int(bins_data_frame['chrom'][:].nunique())
         # info['chromosomes'] = list(bins_data_frame['chrom'][:].unique())
@@ -387,13 +387,13 @@ class Cool(MatrixFile, object):
         # info['sum-elements'] = int(matrix_data_frame['count'].sum())
 
         if self.hic_metadata is not None and 'matrix-generated-by' in self.hic_metadata:
-            info['matrix-generated-by'] = np.string_(self.hic_metadata['matrix-generated-by'])
+            info['matrix-generated-by'] = str(self.hic_metadata['matrix-generated-by'])
             del self.hic_metadata['matrix-generated-by']
         if self.hic_metadata is not None and 'matrix-generated-by-url' in self.hic_metadata:
-            info['matrix-generated-by-url'] = np.string_(self.hic_metadata['matrix-generated-by-url'])
+            info['matrix-generated-by-url'] = str(self.hic_metadata['matrix-generated-by-url'])
             del self.hic_metadata['matrix-generated-by-url']
         if self.hic_metadata is not None and 'genome-assembly' in self.hic_metadata:
-            info['genome-assembly'] = np.string_(self.hic_metadata['genome-assembly'])
+            info['genome-assembly'] = str(self.hic_metadata['genome-assembly'])
             del self.hic_metadata['genome-assembly']
 
         local_temp_dir = os.path.dirname(os.path.realpath(pFileName))
