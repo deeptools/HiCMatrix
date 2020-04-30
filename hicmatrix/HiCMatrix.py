@@ -27,7 +27,7 @@ class hiCMatrix:
     get sub matrices by chrname.
     """
 
-    def __init__(self, pMatrixFile=None, pChrnameList=None):
+    def __init__(self, pMatrixFile=None, pChrnameList=None, pDistance=None):
         self.non_homogeneous_warning_already_printed = False
         self.bin_size = None
         self.bin_size_homogeneous = None  # track if the bins are equally spaced or not
@@ -49,7 +49,7 @@ class hiCMatrix:
             fileType = 'cool'
             if pMatrixFile.endswith('.h5'):
                 fileType = 'h5'
-            self.matrixFileHandler = MatrixFileHandler(pFileType=fileType, pMatrixFile=pMatrixFile, pChrnameList=pChrnameList)
+            self.matrixFileHandler = MatrixFileHandler(pFileType=fileType, pMatrixFile=pMatrixFile, pChrnameList=pChrnameList, pDistance=pDistance)
             log.debug('init time: {}'.format(time.time() - start_time))
             self.matrix, self.cut_intervals, self.nan_bins, \
                 self.correction_factors, self.distance_counts = self.matrixFileHandler.load()

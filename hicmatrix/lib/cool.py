@@ -10,7 +10,7 @@ import time
 import cooler
 import h5py
 import numpy as np
-from scipy.sparse import triu, csr_matrix
+from scipy.sparse import triu, csr_matrix, lil_matrix
 import pandas as pd
 
 from hicmatrix.utilities import toString, toBytes
@@ -37,6 +37,7 @@ class Cool(MatrixFile, object):
 
         self.hic2cool_version = None
         self.hicmatrix_version = None
+        self.distance = None
         # self.scaleToOriginalRange = None
         # self.correction_factors = None
 
@@ -65,6 +66,7 @@ class Cool(MatrixFile, object):
             e
         log.debug('self.chrnameList {}'.format(self.chrnameList))
         if self.chrnameList is None:
+
 
             matrixDataFrame = cooler_file.matrix(balance=False, sparse=True, as_pixels=True)
             used_dtype = np.int32
@@ -105,17 +107,35 @@ class Cool(MatrixFile, object):
             if len(self.chrnameList) == 1:
                 try:
                     log.debug('Load data')
-                    matrix = cooler_file.matrix(balance=False, sparse=True).fetch(self.chrnameList[0]).tocsr()
-                    # handle the case of an empty csr matrix
-                    # if len(matrix.data) == 0:
-                    #     self.minValue = 0
-                    #     self.maxValue = 0
-                    # else:
-                    #     self.minValue = matrix.data.min()
-                    #     self.maxValue = matrix.data.max()
+                    log.debug('self.distance {}'.format(self.distance))
+                    if self.distance is None:
+                        matrix = cooler_file.matrix(balance=False, sparse=True, as_pixels=False).fetch(self.chrnameList[0]).tocsr()
+
+                    else:
+                        lo, hi = cooler_file.extent(self.chrnameList[0])
+                        dist = 2000000 // cooler_file.binsize
+                        step = (hi - lo) // 16
+                        if step < 1:
+                            step = 1
+                        print('hi {}; lo {}'.format(hi,lo))
+                        mat = lil_matrix((hi - lo, hi - lo))
+                        row = []
+                        col = []
+                        data = []
+                        for i0, i1 in cooler.util.partition(lo, hi, step):
+                            # fetch stripe
+                            pixels = cooler_file.matrix(balance=False, as_pixels=True)[i0:i1, lo:hi]
+                            # filter
+                            pixels = pixels[(pixels['bin2_id'] - pixels['bin1_id']) < dist]
+                            # insert into sparse matrix
+                            
+                            mat[pixels['bin1_id'] - lo, pixels['bin2_id'] - lo] = pixels['count']
+                            mat[pixels['bin2_id'] - lo, pixels['bin1_id'] - lo] = pixels['count']
+                        matrix = mat.tocsr()
+                        del mat
                 except ValueError as ve:
                     log.exception("Wrong chromosome format. Please check UCSC / ensembl notation.")
-                    ve
+                    log.exception('Error: {}'.format(str(ve)))
             else:
                 raise Exception("Operation to load more as one region is not supported.")
 
