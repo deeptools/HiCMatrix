@@ -27,7 +27,7 @@ class hiCMatrix:
     get sub matrices by chrname.
     """
 
-    def __init__(self, pMatrixFile=None, pChrnameList=None, pDistance=None):
+    def __init__(self, pMatrixFile=None, pChrnameList=None, pDistance=None, pNoIntervalTree=None, pUpperTriangleOnly=None):
         self.non_homogeneous_warning_already_printed = False
         self.bin_size = None
         self.bin_size_homogeneous = None  # track if the bins are equally spaced or not
@@ -65,7 +65,8 @@ class hiCMatrix:
             if self.nan_bins is None:
                 self.nan_bins = np.array([])
 
-            self.fillLowerTriangle()
+            if pUpperTriangleOnly is None or not pUpperTriangleOnly:
+                self.fillLowerTriangle()
             log.debug('triangle time: {}'.format(time.time() - start_time))
             start_time = time.time()
 
@@ -76,9 +77,11 @@ class hiCMatrix:
             start_time = time.time()
 
             log.debug('restoreMaskedBins')
-
-            self.interval_trees, self.chrBinBoundaries = \
-                self.intervalListToIntervalTree(self.cut_intervals)
+            if pNoIntervalTree is None or not pNoIntervalTree:
+                self.interval_trees, self.chrBinBoundaries = \
+                    self.intervalListToIntervalTree(self.cut_intervals)
+            else:
+                log.debug('no intervaltree')
             log.debug('intervalListToIntervalTree: {}'.format(time.time() - start_time))
             start_time = time.time()
 

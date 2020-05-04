@@ -6,6 +6,7 @@ from copy import deepcopy
 
 import math
 import time
+import gc
 
 import cooler
 import h5py
@@ -95,7 +96,7 @@ class Cool(MatrixFile, object):
                 del _data
                 del _instances
                 del _features
-
+            gc.collect()
             matrix = csr_matrix((data, (instances, features)), shape=(np.int(cooler_file.info['nbins']), np.int(cooler_file.info['nbins'])), dtype=count_dtype)
             # self.minValue = data.min()
             # self.maxValue = data.max()
@@ -103,6 +104,7 @@ class Cool(MatrixFile, object):
             del data
             del instances
             del features
+            gc.collect()
         else:
             if len(self.chrnameList) == 1:
                 try:
@@ -113,15 +115,11 @@ class Cool(MatrixFile, object):
 
                     else:
                         lo, hi = cooler_file.extent(self.chrnameList[0])
-                        dist = 2000000 // cooler_file.binsize
-                        step = (hi - lo) // 16
+                        dist = self.distance // cooler_file.binsize
+                        step = (hi - lo) // 32
                         if step < 1:
                             step = 1
-                        print('hi {}; lo {}'.format(hi,lo))
-                        mat = lil_matrix((hi - lo, hi - lo))
-                        row = []
-                        col = []
-                        data = []
+                        mat = lil_matrix((hi - lo, hi - lo), dtype=np.float32)
                         for i0, i1 in cooler.util.partition(lo, hi, step):
                             # fetch stripe
                             pixels = cooler_file.matrix(balance=False, as_pixels=True)[i0:i1, lo:hi]
@@ -129,10 +127,15 @@ class Cool(MatrixFile, object):
                             pixels = pixels[(pixels['bin2_id'] - pixels['bin1_id']) < dist]
                             # insert into sparse matrix
                             
-                            mat[pixels['bin1_id'] - lo, pixels['bin2_id'] - lo] = pixels['count']
-                            mat[pixels['bin2_id'] - lo, pixels['bin1_id'] - lo] = pixels['count']
+                            mat[pixels['bin1_id'] - lo, pixels['bin2_id'] - lo] = pixels['count'].astype(np.float32)
+                            # mat[pixels['bin2_id'] - lo, pixels['bin1_id'] - lo] = pixels['count']
+                            del pixels
+                            gc.collect()
+
                         matrix = mat.tocsr()
                         del mat
+                        gc.collect()
+
                 except ValueError as ve:
                     log.exception("Wrong chromosome format. Please check UCSC / ensembl notation.")
                     log.exception('Error: {}'.format(str(ve)))
@@ -179,35 +182,15 @@ class Cool(MatrixFile, object):
                             self.correctionOperator = '/'
                         else:
                             self.correctionOperator = '*'
-                        # log.debug('cooler_file.info: {}'.format(cooler_file.info))
                         if 'generated-by' in cooler_file.info:
                             log.debug('cooler_file.info[\'generated-by\'] {} {}'.format(cooler_file.info['generated-by'], type(cooler_file.info['generated-by'])))
                             generated_by = toString(cooler_file.info['generated-by'])
                             if 'hic2cool' in generated_by:
 
                                 self.hic2cool_version = generated_by.split('-')[1]
-                        #         if self.hic2cool_version >= '0.5':
-                        #             log.debug('0.5')
-                        #             self.correctionOperator = '/'
-                        #         else:
-                        #             log.debug('0.4')
-
-                        #             self.correctionOperator = '*'
-                        #     else:
-                        #         self.correctionOperator = '*'
-
-                        #     log.debug('hic2cool: {}'.format(self.hic2cool_version))
-                        #     log.debug('self.correctionOperator : {}'.format(self.correctionOperator))
-
                             elif 'hicmatrix' in generated_by:
 
                                 self.hicmatrix_version = generated_by.split('-')[1]
-                        #     #     if self.hicmatrix_version >= '8':
-                        #     #         self.correctionOperator = '/'
-                        #     #     else:
-                        #     #         self.correctionOperator = '*'
-                        # else:
-                        #     self.correctionOperator = '*'
 
                     instances_factors *= features_factors
                     log.debug('hic2cool: {}'.format(self.hic2cool_version))
@@ -216,27 +199,6 @@ class Cool(MatrixFile, object):
                         matrix.data *= instances_factors
                     elif self.correctionOperator == '/':
                         matrix.data /= instances_factors
-
-                    # if self.scaleToOriginalRange is not None:
-                    # min_value = matrix.data.min()
-                    # max_value = matrix.data.max()
-                    # check if max smaller one or if not same mangnitude
-                    # if max_value < 1 or (np.absolute(int(math.log10(max_value)) - int(math.log10(self.maxValue))) > 1):
-                    #     desired_range_difference = self.maxValue - self.minValue
-
-                    #     min_value = matrix.data.min()
-                    #     max_value = matrix.data.max()
-
-                    #     matrix.data = (matrix.data - min_value)
-                    #     matrix.data /= (max_value - min_value)
-                    #     matrix.data *= desired_range_difference
-                    #     matrix.data += self.minValue
-                    #     self.scaleToOriginalRange = True
-                        # diff_scale_factor = matrix.data.max() / max_value
-                        # if self.correctionOperator == '*':
-                        #     correction_factors *= diff_scale_factor
-                        # if self.correctionOperator == '/':
-                        #     correction_factors /= diff_scale_factor
 
         cut_intervals = []
         time_start = time.time()
