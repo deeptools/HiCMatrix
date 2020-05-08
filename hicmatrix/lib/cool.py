@@ -32,26 +32,23 @@ class Cool(MatrixFile, object):
         self.appendData = False
         self.fileWasH5 = False
         self.applyCorrectionLoad = True
-        # self.hic_info = {}
         self.hic_metadata = {}
         self.cool_info = None
 
         self.hic2cool_version = None
         self.hicmatrix_version = None
         self.distance = None
-        # self.scaleToOriginalRange = None
-        # self.correction_factors = None
 
     def getInformationCoolerBinNames(self):
         return cooler.Cooler(self.matrixFileName).bins().columns.values
 
+    
     def load(self):
         log.debug('Load in cool format')
         self.minValue = None
         self.maxValue = None
         if self.matrixFileName is None:
-            log.info('No matrix is initialized')
-
+            log.warning('No matrix is initialized')
         try:
             cooler_file = cooler.Cooler(self.matrixFileName)
             if 'metadata' in cooler_file.info:
@@ -59,16 +56,12 @@ class Cool(MatrixFile, object):
             else:
                 self.hic_metadata = None
             self.cool_info = deepcopy(cooler_file.info)
-            # log.debug("cooler_file.info {}".format(cooler_file.info))
         except Exception as e:
-            log.info("Could not open cooler file. Maybe the path is wrong or the given node is not available.")
-            log.info('The following file was tried to open: {}'.format(self.matrixFileName))
-            log.info("The following nodes are available: {}".format(cooler.fileops.list_coolers(self.matrixFileName.split("::")[0])))
-            e
-        log.debug('self.chrnameList {}'.format(self.chrnameList))
+            log.warning("Could not open cooler file. Maybe the path is wrong or the given node is not available.")
+            log.warning('The following file was tried to open: {}'.format(self.matrixFileName))
+            log.warning("The following nodes are available: {}".format(cooler.fileops.list_coolers(self.matrixFileName.split("::")[0])))
+            return None, e
         if self.chrnameList is None:
-
-
             matrixDataFrame = cooler_file.matrix(balance=False, sparse=True, as_pixels=True)
             used_dtype = np.int32
             if np.iinfo(np.int32).max < cooler_file.info['nbins']:
@@ -96,41 +89,36 @@ class Cool(MatrixFile, object):
                 del _data
                 del _instances
                 del _features
-            gc.collect()
             matrix = csr_matrix((data, (instances, features)), shape=(np.int(cooler_file.info['nbins']), np.int(cooler_file.info['nbins'])), dtype=count_dtype)
-            # self.minValue = data.min()
-            # self.maxValue = data.max()
 
             del data
             del instances
             del features
             gc.collect()
+
         else:
             if len(self.chrnameList) == 1:
                 try:
-                    log.debug('Load data')
-                    log.debug('self.distance {}'.format(self.distance))
-                    if self.distance is None:
+                    if self.distance is None or cooler_file.binsize is None:
+                        # load the full chromosome
                         matrix = cooler_file.matrix(balance=False, sparse=True, as_pixels=False).fetch(self.chrnameList[0]).tocsr()
-
                     else:
+                        # load only the values up to a specific distance
                         lo, hi = cooler_file.extent(self.chrnameList[0])
                         dist = self.distance // cooler_file.binsize
                         step = (hi - lo) // 32
                         if step < 1:
                             step = 1
                         mat = lil_matrix((hi - lo, hi - lo), dtype=np.float32)
+                        
                         for i0, i1 in cooler.util.partition(lo, hi, step):
                             # fetch stripe
                             pixels = cooler_file.matrix(balance=False, as_pixels=True)[i0:i1, lo:hi]
                             # filter
                             pixels = pixels[(pixels['bin2_id'] - pixels['bin1_id']) < dist]
                             # insert into sparse matrix
-                            
                             mat[pixels['bin1_id'] - lo, pixels['bin2_id'] - lo] = pixels['count'].astype(np.float32)
-                            # mat[pixels['bin2_id'] - lo, pixels['bin1_id'] - lo] = pixels['count']
                             del pixels
-                            gc.collect()
 
                         matrix = mat.tocsr()
                         del mat
@@ -186,10 +174,8 @@ class Cool(MatrixFile, object):
                             log.debug('cooler_file.info[\'generated-by\'] {} {}'.format(cooler_file.info['generated-by'], type(cooler_file.info['generated-by'])))
                             generated_by = toString(cooler_file.info['generated-by'])
                             if 'hic2cool' in generated_by:
-
                                 self.hic2cool_version = generated_by.split('-')[1]
                             elif 'hicmatrix' in generated_by:
-
                                 self.hicmatrix_version = generated_by.split('-')[1]
 
                     instances_factors *= features_factors
@@ -202,10 +188,8 @@ class Cool(MatrixFile, object):
 
         cut_intervals = []
         time_start = time.time()
-        log.debug('Creating cut_intervals {}'.format(time_start))
         for values in cut_intervals_data_frame.values:
             cut_intervals.append(tuple([toString(values[0]), values[1], values[2], 1.0]))
-        log.debug('Creating cut_intervals {} DONE'.format(time.time() - time_start))
         del cut_intervals_data_frame
         del correction_factors_data_frame
         # try to restore nan_bins.
@@ -213,7 +197,6 @@ class Cool(MatrixFile, object):
             shape = matrix.shape[0] if matrix.shape[0] < matrix.shape[1] else matrix.shape[1]
             nan_bins = np.arange(shape)
             nan_bins = np.setdiff1d(nan_bins, matrix.indices)
-
         except Exception:
             nan_bins = None
 
@@ -267,7 +250,7 @@ class Cool(MatrixFile, object):
             # https://cooler.readthedocs.io/en/latest/api.html#cooler.Cooler.matrix
             if (self.hic2cool_version is not None and self.hic2cool_version >= '0.5') or self.fileWasH5 or self.correctionOperator == '/':
 
-                log.debug('wash5 true')
+                log.debug('h5 true')
                 self.correction_factors = np.array(self.correction_factors).flatten()
                 self.correction_factors = 1 / self.correction_factors
                 mask = np.isnan(self.correction_factors)
@@ -279,7 +262,7 @@ class Cool(MatrixFile, object):
             weight = convertNansToOnes(np.array(self.correction_factors).flatten())
             bins_data_frame = bins_data_frame.assign(weight=weight)
 
-            log.info("Reverting correction factors on matrix...")
+            log.debug("Reverting correction factors on matrix...")
             instances, features = self.matrix.nonzero()
             self.correction_factors = np.array(self.correction_factors)
 
@@ -292,31 +275,13 @@ class Cool(MatrixFile, object):
             self.matrix.data = self.matrix.data.astype(float)
 
             # Apply the invert operation to get the original data
-            log.debug('self.correctionOperator: {}'.format(self.correctionOperator))
-            log.debug('self.fileWasH5: {}'.format(self.fileWasH5))
-
-            # if self.scaleToOriginalRange:
-            #     min_value = self.matrix.data.min()
-            #     max_value = self.matrix.data.max()
-            #     desired_range_difference = max_value - min_value
-
-            #     self.matrix.data = (self.matrix.data - self.minValue)
-            #     self.matrix.data /= (self.maxValue - self.minValue)
-            #     self.matrix.data *= desired_range_difference
-            #     self.matrix.data += min_value
-
             if self.correctionOperator == '*' or self.correctionOperator is None:
                 self.matrix.data /= instances_factors
-            # elif self.correctionOperator == '/' or self.fileWasH5:
-            #     self.matrix.data *= instances_factors
 
             instances_factors = None
             features_factors = None
 
             self.matrix.eliminate_zeros()
-
-        log.debug('self.correction_factors {}'.format(self.correction_factors))
-        log.debug('pApplyCorrection {}'.format(pApplyCorrection))
 
         if self.correction_factors is not None and pApplyCorrection is False:
             dtype_pixel['weight'] = np.float32
@@ -338,7 +303,7 @@ class Cool(MatrixFile, object):
             matrix_data_frame = matrix_data_frame.assign(count=self.matrix.data)
 
         if not self.enforceInteger and self.matrix.dtype not in [np.int32, int]:
-            log.warning("Writing non-standard cooler matrix. Datatype of matrix['count'] is: {}".format(self.matrix.dtype))
+            log.debug("Writing non-standard cooler matrix. Datatype of matrix['count'] is: {}".format(self.matrix.dtype))
             dtype_pixel['count'] = self.matrix.dtype
         split_factor = 1
         if len(self.matrix.data) > 1e7:

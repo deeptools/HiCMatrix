@@ -252,6 +252,50 @@ def test_save_cool():
 
     os.unlink(cool_outfile)
 
+def test_load_distance_cool():
+    cool_outfile = outfile + '.cool'
+
+    # create matrixFileHandler instance with filetype 'cool'
+    pMatrixFile = ROOT + 'GSE63525_GM12878_insitu_primary_2_5mb_hic2cool051.cool'
+    fh = MatrixFileHandler(pFileType='cool', pMatrixFile=pMatrixFile, pChrnameList=['1'], pDistance=2500000)
+    assert fh is not None
+
+    # load data
+    matrix, cut_intervals, nan_bins, distance_counts, correction_factors = fh.load()
+    # set matrix variables
+    fh.set_matrix_variables(matrix, cut_intervals, nan_bins, correction_factors, distance_counts)
+    # and save it.
+    fh.save(pName=cool_outfile, pSymmetric=True, pApplyCorrection=True)
+
+    fh_test = MatrixFileHandler(pFileType='cool', pMatrixFile=cool_outfile)
+    assert fh_test is not None
+    matrix_test, cut_intervals_test, nan_bins_test, distance_counts_test, correction_factors_test = fh_test.load()
+
+    # check distance load works as expected
+    instances, features = matrix.nonzero()
+    distances = np.absolute(instances - features)
+    # log.debug('max: {}'.format(np.max(distances)))
+    mask = distances > 1 # 2.5 mb res --> all with  2.5 Mb distance
+    assert np.sum(mask) == 0
+
+    fh = MatrixFileHandler(pFileType='cool',  pChrnameList=['1'], pMatrixFile=pMatrixFile)
+    assert fh is not None
+
+    # load data
+    matrix2, _, _, _, _ = fh.load()
+    instances, features = matrix2.nonzero()
+    distances = np.absolute(instances - features)
+    mask = distances > 1 # 2.5 mb res --> all with  2.5 Mb distance
+    assert np.sum(mask) > 0
+
+    # check if load and save matrix are equal
+    nt.assert_equal(matrix.data, matrix_test.data)
+    nt.assert_equal(cut_intervals, cut_intervals_test)
+    nt.assert_equal(nan_bins, nan_bins_test)
+    nt.assert_equal(distance_counts, distance_counts_test)
+    nt.assert_equal(correction_factors, correction_factors_test)
+
+    os.unlink(cool_outfile)
 
 def test_load_h5_save_cool():
     cool_outfile = outfile + '.cool'
@@ -346,7 +390,7 @@ def test_save_cool_enforce_integer():
 
 def test_load_cool_hic2cool_versions():
     pMatrixFile = ROOT + 'GSE63525_GM12878_insitu_primary_2_5mb_hic2cool042.cool'
-    hic2cool_042 = MatrixFileHandler(pFileType='cool', pMatrixFile=pMatrixFile, pCorrectionFactorTable='KR')
+    hic2cool_042 = MatrixFileHandler(pFileType='cool', pMatrixFile=pMatrixFile, pCorrectionFactorTable='KR', pCorrectionOperator='*')
     pMatrixFile = ROOT + 'GSE63525_GM12878_insitu_primary_2_5mb_hic2cool051.cool'
     hic2cool_051 = MatrixFileHandler(pFileType='cool', pMatrixFile=pMatrixFile, pCorrectionFactorTable='KR')
 
@@ -383,7 +427,7 @@ def test_save_cool_apply_division():
 
     fh_new.save(pName=cool_outfile, pSymmetric=False, pApplyCorrection=True)
 
-    fh_test = MatrixFileHandler(pFileType='cool', pMatrixFile=cool_outfile, pCorrectionOperator='/')
+    fh_test = MatrixFileHandler(pFileType='cool', pMatrixFile=cool_outfile)
     assert fh_test is not None
     matrix_test, cut_intervals_test, nan_bins_test, distance_counts_test, correction_factors_test = fh_test.load()
     pMatrixFile = ROOT + 'Li_et_al_2015.cool'

@@ -51,41 +51,29 @@ class hiCMatrix:
                 fileType = 'h5'
             self.matrixFileHandler = MatrixFileHandler(pFileType=fileType, pMatrixFile=pMatrixFile, pChrnameList=pChrnameList, pDistance=pDistance)
             log.debug('init time: {}'.format(time.time() - start_time))
-            self.matrix, self.cut_intervals, self.nan_bins, \
-                self.correction_factors, self.distance_counts = self.matrixFileHandler.load()
-            # if len(self.matrix.data) == 0:
-            #     log.warning('No data for {}, not initialization of object. '.format(pChrnameList))
-            #     self.interval_trees = None
-            #     self.chrBinBoundaries = None
-            #     return
-            log.debug('load time: {}'.format(time.time() - start_time))
-            start_time = time.time()
-
-            log.debug('data loaded from file handler')
+            matrixFileHandler_load = self.matrixFileHandler.load()
+            # check if there was any exception thrown in the load function
+            if len(matrixFileHandler_load) == 2:
+                raise Exception('Matrix failed to load: {}'.format(str(matrixFileHandler_load[1])))
+            else:
+                self.matrix, self.cut_intervals, self.nan_bins, \
+                    self.correction_factors, self.distance_counts = matrixFileHandler_load
             if self.nan_bins is None:
                 self.nan_bins = np.array([])
 
             if pUpperTriangleOnly is None or not pUpperTriangleOnly:
                 self.fillLowerTriangle()
-            log.debug('triangle time: {}'.format(time.time() - start_time))
             start_time = time.time()
 
-            log.debug('fillLowerTriangle')
 
             self.restoreMaskedBins()
-            log.debug('restoreMaskedBins: {}'.format(time.time() - start_time))
             start_time = time.time()
 
-            log.debug('restoreMaskedBins')
             if pNoIntervalTree is None or not pNoIntervalTree:
                 self.interval_trees, self.chrBinBoundaries = \
                     self.intervalListToIntervalTree(self.cut_intervals)
             else:
                 log.debug('no intervaltree')
-            log.debug('intervalListToIntervalTree: {}'.format(time.time() - start_time))
-            start_time = time.time()
-
-            log.debug('intervalListToIntervalTree')
 
         elif pMatrixFile is None:
             log.debug('Only init object, no matrix given.')
