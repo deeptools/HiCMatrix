@@ -54,7 +54,7 @@ def check_chrom_str_bytes(pIteratableObj, pObj):
 def convertNansToZeros(ma):
     nan_elements = np.flatnonzero(np.isnan(ma.data))
     if len(nan_elements) > 0:
-        ma.data[nan_elements] = 0
+        ma.data[nan_elements] = 0.0
     return ma
 
 

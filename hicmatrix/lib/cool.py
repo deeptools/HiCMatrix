@@ -15,7 +15,7 @@ from scipy.sparse import triu, csr_matrix, lil_matrix
 import pandas as pd
 
 from hicmatrix.utilities import toString, toBytes
-from hicmatrix.utilities import convertNansToOnes
+from hicmatrix.utilities import convertNansToOnes, convertNansToZeros
 from hicmatrix._version import __version__
 
 from .matrixFile import MatrixFile
@@ -155,9 +155,10 @@ class Cool(MatrixFile, object):
 
                 matrix.data = matrix.data.astype(float)
 
-                correction_factors = convertNansToOnes(np.array(correction_factors_data_frame.values).flatten())
-                # apply only if there are not only 1's
-                if np.sum(correction_factors) != len(correction_factors):
+                correction_factors = np.array(correction_factors_data_frame.values).flatten()
+                # Don't apply correction if weight were just 'nans'
+                if np.sum(np.isnan(correction_factors)) != len(correction_factors):
+                    # correction_factors = convertNansToZeros(correction_factors)
                     matrix.sort_indices()
 
                     instances, features = matrix.nonzero()
