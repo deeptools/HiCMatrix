@@ -11,9 +11,33 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_data/")
 outfile = '/tmp/matrix'
 
 
-def test_load_homer(capsys):
+def test_load_homer():
     # create matrixFileHandler instance with filetype 'homer'
     pMatrixFile = ROOT + 'test_matrix.homer'
+    fh = MatrixFileHandler(pFileType='homer', pMatrixFile=pMatrixFile)
+    assert fh is not None
+
+    # load data
+    matrix, cut_intervals, nan_bins, distance_counts, correction_factors = fh.load()
+
+    # create test matrix
+
+    test_matrix = np.array([[1.0, 0.1896, 0.2163, 0.08288, 0.1431, 0.2569, 0.1315,
+                             0.1488, -0.0312, 0.143, 0.06091, 0.03546, 0.1168]])
+
+    nt.assert_almost_equal(matrix[0].todense(), test_matrix)
+
+    test_cut_intervals = [('3R', 1000000, 1020000, 1), ('3R', 1020000, 1040000, 1), ('3R', 1040000, 1060000, 1), ('3R', 1060000, 1080000, 1), ('3R', 1080000, 1100000, 1), ('3R', 1100000, 1120000, 1), ('3R', 1120000, 1140000, 1), ('3R', 1140000, 1160000, 1), ('3R', 1160000, 1180000, 1), ('3R', 1180000, 1200000, 1), ('3R', 1200000, 1220000, 1), ('3R', 1220000, 1240000, 1), ('3R', 1240000, 1260000, 1)]  # noqa E501
+    nt.assert_equal(cut_intervals, test_cut_intervals)
+
+    assert nan_bins is None
+    assert distance_counts is None
+    assert correction_factors is None
+
+
+def test_load_homer_gzip():
+    # create matrixFileHandler instance with filetype 'homer'
+    pMatrixFile = ROOT + 'test_matrix.homer.gz'
     fh = MatrixFileHandler(pFileType='homer', pMatrixFile=pMatrixFile)
     assert fh is not None
 

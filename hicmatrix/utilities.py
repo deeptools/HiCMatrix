@@ -1,5 +1,6 @@
 import numpy as np
 import sys
+import gzip
 
 
 def toString(s):
@@ -98,3 +99,18 @@ def enlarge_bins(bin_intervals):
     bin_intervals[-1] = (chrom, start, end, extra)
 
     return bin_intervals
+
+
+def opener(filename):
+    """
+    Determines if a file is compressed or not
+    """
+    f = open(filename, 'rb')
+    # print("gzip or not?", f.read(2))
+
+    if f.read(2) == b'\x1f\x8b':
+        f.seek(0)
+        return gzip.GzipFile(fileobj=f)
+    else:
+        f.seek(0)
+        return f
