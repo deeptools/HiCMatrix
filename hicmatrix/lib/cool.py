@@ -193,6 +193,11 @@ class Cool(MatrixFile, object):
         del correction_factors_data_frame
         # try to restore nan_bins.
         try:
+            # remove possible nan bins introduced by the correction factors 
+            # to have them part of the nan_bins vector
+            mask = matrix.data == np.nan
+            matrix.data[mask] = 0 
+            matrix.eliminate_zeros()
             shape = matrix.shape[0] if matrix.shape[0] < matrix.shape[1] else matrix.shape[1]
             nan_bins = np.arange(shape)
             nan_bins = np.setdiff1d(nan_bins, matrix.indices)

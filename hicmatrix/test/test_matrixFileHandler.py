@@ -404,6 +404,10 @@ def test_save_cool_enforce_integer():
     # instances_factors *= features_factors
 
     # matrix_applied_correction = matrix.data / instances_factors
+    # mask = matrix.data == 0
+    matrix.eliminate_zeros()
+    matrix_test.eliminate_zeros()
+
 
     nt.assert_almost_equal(matrix.data, matrix_test.data, decimal=0)
     nt.assert_equal(len(cut_intervals), len(cut_intervals_test))
