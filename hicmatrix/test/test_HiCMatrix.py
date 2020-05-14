@@ -5,7 +5,7 @@ import sys
 from os import unlink
 import warnings
 from six import iteritems
-from past.builtins import zip
+# from past.builtins import zip
 from collections import OrderedDict
 from intervaltree import IntervalTree, Interval
 
@@ -35,8 +35,8 @@ def test_load_h5_save_and_load_cool():
     hic_cool = hm.hiCMatrix(outfile.name)
 
     nt.assert_equal(hic_cool.matrix.data, hic.matrix.data)
-    chrom_cool, start_cool, end_cool, _ = zip(*hic_cool.cut_intervals)
-    chrom, start, end, _ = zip(*hic_cool.cut_intervals)
+    chrom_cool, start_cool, end_cool, _ = list(zip(*hic_cool.cut_intervals))
+    chrom, start, end, _ = list(zip(*hic_cool.cut_intervals))
 
     nt.assert_equal(chrom_cool, chrom)
     nt.assert_equal(start_cool, start)
@@ -53,8 +53,8 @@ def test_load_h5_save_and_load_cool_2():
     hic_cool = hm.hiCMatrix(outfile.name)
 
     nt.assert_equal(hic_cool.matrix.data, hic.matrix.data)
-    chrom_cool, start_cool, end_cool, _ = zip(*hic_cool.cut_intervals)
-    chrom, start, end, _ = zip(*hic_cool.cut_intervals)
+    chrom_cool, start_cool, end_cool, _ = list(zip(*hic_cool.cut_intervals))
+    chrom, start, end, _ = list(zip(*hic_cool.cut_intervals))
 
     nt.assert_equal(chrom_cool, chrom)
     nt.assert_equal(start_cool, start)
@@ -71,8 +71,8 @@ def test_load_cool_save_and_load_h5():
     hic_cool = hm.hiCMatrix(outfile.name)
 
     nt.assert_equal(hic_cool.matrix.data, hic.matrix.data)
-    chrom_cool, start_cool, end_cool, _ = zip(*hic_cool.cut_intervals)
-    chrom, start, end, _ = zip(*hic_cool.cut_intervals)
+    chrom_cool, start_cool, end_cool, _ = list(zip(*hic_cool.cut_intervals))
+    chrom, start, end, _ = list(zip(*hic_cool.cut_intervals))
 
     nt.assert_equal(chrom_cool, chrom)
     nt.assert_equal(start_cool, start)
@@ -201,8 +201,8 @@ def test_convert_to_zscore_matrix_2():
 
     m_size = mat.shape[0]
     # compute matrix values per distance
-    chrom, start, end, extra = zip(
-        *hm.hiCMatrix.fit_cut_intervals(hic.cut_intervals))
+    chrom, start, end, extra = list(zip(
+        *hm.hiCMatrix.fit_cut_intervals(hic.cut_intervals)))
     dist_values = {}
     sys.stderr.write("Computing values per distance for each matrix entry\n")
 

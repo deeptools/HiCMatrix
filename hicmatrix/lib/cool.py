@@ -42,7 +42,6 @@ class Cool(MatrixFile, object):
     def getInformationCoolerBinNames(self):
         return cooler.Cooler(self.matrixFileName).bins().columns.values
 
-    
     def load(self):
         log.debug('Load in cool format')
         self.minValue = None
@@ -110,7 +109,7 @@ class Cool(MatrixFile, object):
                         if step < 1:
                             step = 1
                         mat = lil_matrix((hi - lo, hi - lo), dtype=np.float32)
-                        
+
                         for i0, i1 in cooler.util.partition(lo, hi, step):
                             # fetch stripe
                             pixels = cooler_file.matrix(balance=False, as_pixels=True)[i0:i1, lo:hi]
@@ -187,7 +186,6 @@ class Cool(MatrixFile, object):
                         matrix.data /= instances_factors
 
         cut_intervals = []
-        time_start = time.time()
         for values in cut_intervals_data_frame.values:
             cut_intervals.append(tuple([toString(values[0]), values[1], values[2], 1.0]))
         del cut_intervals_data_frame

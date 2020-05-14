@@ -207,12 +207,12 @@ def test_load_cool2(capsys):
     nt.assert_almost_equal(matrix[0].todense(), test_matrix)
 
     test_cut_intervals = sum([[('chr1', i * bin_size, (i + 1) * bin_size, 1.0) for i in range(3909)],
-                             [('chr1', 195450000, 195471971, 1.0)],
-                             [('chrX', i * bin_size, (i + 1) * bin_size, 1.0) for i in range(3420)],
-                             [('chrX', 171000000, 171031299, 1.0)],
-                             [('chrY', i * bin_size, (i + 1) * bin_size, 1.0) for i in range(1834)],
-                             [('chrY', 91700000, 91744698, 1.0)],
-                             [('chrM', 0, 16299, 1.0)]], [])
+                              [('chr1', 195450000, 195471971, 1.0)],
+                              [('chrX', i * bin_size, (i + 1) * bin_size, 1.0) for i in range(3420)],
+                              [('chrX', 171000000, 171031299, 1.0)],
+                              [('chrY', i * bin_size, (i + 1) * bin_size, 1.0) for i in range(1834)],
+                              [('chrY', 91700000, 91744698, 1.0)],
+                              [('chrM', 0, 16299, 1.0)]], [])
 
     for index, tup in enumerate(cut_intervals):
         for ind, element in enumerate(tup):
@@ -252,6 +252,7 @@ def test_save_cool():
 
     os.unlink(cool_outfile)
 
+
 def test_load_distance_cool():
     cool_outfile = outfile + '.cool'
 
@@ -275,17 +276,17 @@ def test_load_distance_cool():
     instances, features = matrix.nonzero()
     distances = np.absolute(instances - features)
     # log.debug('max: {}'.format(np.max(distances)))
-    mask = distances > 1 # 2.5 mb res --> all with  2.5 Mb distance
+    mask = distances > 1  # 2.5 mb res --> all with  2.5 Mb distance
     assert np.sum(mask) == 0
 
-    fh = MatrixFileHandler(pFileType='cool',  pChrnameList=['1'], pMatrixFile=pMatrixFile)
+    fh = MatrixFileHandler(pFileType='cool', pChrnameList=['1'], pMatrixFile=pMatrixFile)
     assert fh is not None
 
     # load data
     matrix2, _, _, _, _ = fh.load()
     instances, features = matrix2.nonzero()
     distances = np.absolute(instances - features)
-    mask = distances > 1 # 2.5 mb res --> all with  2.5 Mb distance
+    mask = distances > 1  # 2.5 mb res --> all with  2.5 Mb distance
     assert np.sum(mask) > 0
 
     # check if load and save matrix are equal
@@ -296,6 +297,7 @@ def test_load_distance_cool():
     nt.assert_equal(correction_factors, correction_factors_test)
 
     os.unlink(cool_outfile)
+
 
 def test_load_h5_save_cool():
     cool_outfile = outfile + '.cool'

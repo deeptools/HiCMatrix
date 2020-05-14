@@ -65,7 +65,6 @@ class hiCMatrix:
                 self.fillLowerTriangle()
             start_time = time.time()
 
-
             self.restoreMaskedBins()
             start_time = time.time()
 
@@ -1007,6 +1006,6 @@ class hiCMatrix:
 
 
 def check_cooler(pFileName):
-    if pFileName.endswith('.cool') or cooler.io.is_cooler(pFileName) or'.mcool' in pFileName:
+    if pFileName.endswith('.cool') or cooler.io.is_cooler(pFileName) or '.mcool' in pFileName:
         return True
     return False
