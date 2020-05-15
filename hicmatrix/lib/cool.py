@@ -157,7 +157,7 @@ class Cool(MatrixFile, object):
 
                 correction_factors = np.array(correction_factors_data_frame.values).flatten()
                 # Don't apply correction if weight were just 'nans'
-                if np.sum(np.isnan(correction_factors)) != len(correction_factors):
+                if np.sum(np.isnan(matrix.data)) != len(correction_factors):
                     # correction_factors = convertNansToZeros(correction_factors)
                     matrix.sort_indices()
 
@@ -193,14 +193,20 @@ class Cool(MatrixFile, object):
         del correction_factors_data_frame
         # try to restore nan_bins.
         try:
-            # remove possible nan bins introduced by the correction factors 
+            # remove possible nan bins introduced by the correction factors
             # to have them part of the nan_bins vector
-            mask = matrix.data == np.nan
-            matrix.data[mask] = 0 
+            mask = np.isnan(matrix.data)
+            matrix.data[mask] = 0
             matrix.eliminate_zeros()
             shape = matrix.shape[0] if matrix.shape[0] < matrix.shape[1] else matrix.shape[1]
-            nan_bins = np.arange(shape)
-            nan_bins = np.setdiff1d(nan_bins, matrix.indices)
+            nan_bins_indices = np.arange(shape)
+            nan_bins_indices = np.setdiff1d(nan_bins_indices, matrix.indices)
+
+            nan_bins = []
+            for bin_id in nan_bins_indices:
+                if len(matrix[bin_id, :].data) == 0:
+                    nan_bins.append(bin_id)
+            nan_bins = np.array(nan_bins)
         except Exception:
             nan_bins = None
 

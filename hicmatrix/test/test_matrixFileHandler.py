@@ -242,7 +242,7 @@ def test_load_cool2(capsys):
         for ind, element in enumerate(tup):
             assert element == test_cut_intervals[index][ind]
 
-    test_nan_bins = [0, 1, 2, 4]
+    test_nan_bins = [1, 2, 4, 5]
     nt.assert_almost_equal(nan_bins[:4], test_nan_bins)
 
     assert distance_counts is None
@@ -392,9 +392,9 @@ def test_save_cool_enforce_integer():
     assert fh_test is not None
     matrix_test, cut_intervals_test, nan_bins_test, distance_counts_test, correction_factors_test = fh_test.load()
 
-    pMatrixFile = ROOT + 'Li_et_al_2015.h5'
-    fh = MatrixFileHandler(pFileType='h5', pMatrixFile=pMatrixFile)
-    assert fh is not None
+    # pMatrixFile = ROOT + 'Li_et_al_2015.h5'
+    # fh = MatrixFileHandler(pFileType='h5', pMatrixFile=pMatrixFile)
+    # assert fh is not None
 
     # load data
     # matrix, cut_intervals, nan_bins, distance_counts, correction_factors = fh.load()
@@ -405,9 +405,9 @@ def test_save_cool_enforce_integer():
 
     # matrix_applied_correction = matrix.data / instances_factors
     # mask = matrix.data == 0
+    matrix.data = np.rint(matrix.data)
     matrix.eliminate_zeros()
-    matrix_test.eliminate_zeros()
-
+    # matrix_test.eliminate_zeros()
 
     nt.assert_almost_equal(matrix.data, matrix_test.data, decimal=0)
     nt.assert_equal(len(cut_intervals), len(cut_intervals_test))
