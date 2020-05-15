@@ -157,7 +157,7 @@ class Cool(MatrixFile, object):
 
                 correction_factors = np.array(correction_factors_data_frame.values).flatten()
                 # Don't apply correction if weight were just 'nans'
-                if np.sum(np.isnan(matrix.data)) != len(correction_factors):
+                if np.sum(np.isnan(correction_factors)) != len(correction_factors):
                     # correction_factors = convertNansToZeros(correction_factors)
                     matrix.sort_indices()
 
