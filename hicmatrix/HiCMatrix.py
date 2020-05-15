@@ -27,7 +27,7 @@ class hiCMatrix:
     get sub matrices by chrname.
     """
 
-    def __init__(self, pMatrixFile=None, pChrnameList=None):
+    def __init__(self, pMatrixFile=None, pChrnameList=None, pDistance=None, pNoIntervalTree=None, pUpperTriangleOnly=None):
         self.non_homogeneous_warning_already_printed = False
         self.bin_size = None
         self.bin_size_homogeneous = None  # track if the bins are equally spaced or not
@@ -49,40 +49,30 @@ class hiCMatrix:
             fileType = 'cool'
             if pMatrixFile.endswith('.h5'):
                 fileType = 'h5'
-            self.matrixFileHandler = MatrixFileHandler(pFileType=fileType, pMatrixFile=pMatrixFile, pChrnameList=pChrnameList)
+            self.matrixFileHandler = MatrixFileHandler(pFileType=fileType, pMatrixFile=pMatrixFile, pChrnameList=pChrnameList, pDistance=pDistance)
             log.debug('init time: {}'.format(time.time() - start_time))
-            self.matrix, self.cut_intervals, self.nan_bins, \
-                self.correction_factors, self.distance_counts = self.matrixFileHandler.load()
-            # if len(self.matrix.data) == 0:
-            #     log.warning('No data for {}, not initialization of object. '.format(pChrnameList))
-            #     self.interval_trees = None
-            #     self.chrBinBoundaries = None
-            #     return
-            log.debug('load time: {}'.format(time.time() - start_time))
-            start_time = time.time()
-
-            log.debug('data loaded from file handler')
+            matrixFileHandler_load = self.matrixFileHandler.load()
+            # check if there was any exception thrown in the load function
+            if len(matrixFileHandler_load) == 2:
+                raise Exception('Matrix failed to load: {}'.format(str(matrixFileHandler_load[1])))
+            else:
+                self.matrix, self.cut_intervals, self.nan_bins, \
+                    self.correction_factors, self.distance_counts = matrixFileHandler_load
             if self.nan_bins is None:
                 self.nan_bins = np.array([])
 
-            self.fillLowerTriangle()
-            log.debug('triangle time: {}'.format(time.time() - start_time))
+            if pUpperTriangleOnly is None or not pUpperTriangleOnly:
+                self.fillLowerTriangle()
             start_time = time.time()
-
-            log.debug('fillLowerTriangle')
 
             self.restoreMaskedBins()
-            log.debug('restoreMaskedBins: {}'.format(time.time() - start_time))
             start_time = time.time()
 
-            log.debug('restoreMaskedBins')
-
-            self.interval_trees, self.chrBinBoundaries = \
-                self.intervalListToIntervalTree(self.cut_intervals)
-            log.debug('intervalListToIntervalTree: {}'.format(time.time() - start_time))
-            start_time = time.time()
-
-            log.debug('intervalListToIntervalTree')
+            if pNoIntervalTree is None or not pNoIntervalTree:
+                self.interval_trees, self.chrBinBoundaries = \
+                    self.intervalListToIntervalTree(self.cut_intervals)
+            else:
+                log.debug('no intervaltree')
 
         elif pMatrixFile is None:
             log.debug('Only init object, no matrix given.')
@@ -1016,6 +1006,6 @@ class hiCMatrix:
 
 
 def check_cooler(pFileName):
-    if pFileName.endswith('.cool') or cooler.io.is_cooler(pFileName) or'.mcool' in pFileName:
+    if pFileName.endswith('.cool') or cooler.io.is_cooler(pFileName) or '.mcool' in pFileName:
         return True
     return False

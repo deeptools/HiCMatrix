@@ -5,6 +5,7 @@ import gzip
 from scipy.sparse import csr_matrix
 
 from .matrixFile import MatrixFile
+from hicmatrix.utilities import opener
 
 
 class Homer(MatrixFile, object):
@@ -15,26 +16,27 @@ class Homer(MatrixFile, object):
     def load(self):
         cut_intervals = []
 
-        with open(self.matrixFileName, 'r') as matrix_file:
+        # matrix_file = opener(self.matrixFileName)
+        with opener(self.matrixFileName) as matrix_file:
             values = matrix_file.readline()
-            values = values.strip().split('\t')
+            values = values.strip().split(b'\t')
 
             # get bin size
-            start_first = int(values[2].strip().split('-')[1])
-            start_second = int(values[3].strip().split('-')[1])
+            start_first = int(values[2].strip().split(b'-')[1])
+            start_second = int(values[3].strip().split(b'-')[1])
             bin_size = start_second - start_first
             for i, value in enumerate(values[2:]):
-                chrom, start = value.strip().split('-')
-                cut_intervals.append((chrom, int(start), int(start) + bin_size, 1))
+                chrom, start = value.strip().split(b'-')
+                cut_intervals.append((chrom.decode('ascii'), int(start), int(start) + bin_size, 1))
 
             matrix_dense = []
             for line in matrix_file:
-                values = line.split('\t')
+                values = line.split(b'\t')
                 data = []
                 for i, value in enumerate(values[2:]):
                     data.append(float(value))
                 matrix_dense.append(data)
-
+        # matrix_file.close()
         matrix = csr_matrix(matrix_dense)
         nan_bins = None
         distance_counts = None

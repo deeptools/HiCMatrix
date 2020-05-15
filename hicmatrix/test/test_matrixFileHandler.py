@@ -11,9 +11,33 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_data/")
 outfile = '/tmp/matrix'
 
 
-def test_load_homer(capsys):
+def test_load_homer():
     # create matrixFileHandler instance with filetype 'homer'
     pMatrixFile = ROOT + 'test_matrix.homer'
+    fh = MatrixFileHandler(pFileType='homer', pMatrixFile=pMatrixFile)
+    assert fh is not None
+
+    # load data
+    matrix, cut_intervals, nan_bins, distance_counts, correction_factors = fh.load()
+
+    # create test matrix
+
+    test_matrix = np.array([[1.0, 0.1896, 0.2163, 0.08288, 0.1431, 0.2569, 0.1315,
+                             0.1488, -0.0312, 0.143, 0.06091, 0.03546, 0.1168]])
+
+    nt.assert_almost_equal(matrix[0].todense(), test_matrix)
+
+    test_cut_intervals = [('3R', 1000000, 1020000, 1), ('3R', 1020000, 1040000, 1), ('3R', 1040000, 1060000, 1), ('3R', 1060000, 1080000, 1), ('3R', 1080000, 1100000, 1), ('3R', 1100000, 1120000, 1), ('3R', 1120000, 1140000, 1), ('3R', 1140000, 1160000, 1), ('3R', 1160000, 1180000, 1), ('3R', 1180000, 1200000, 1), ('3R', 1200000, 1220000, 1), ('3R', 1220000, 1240000, 1), ('3R', 1240000, 1260000, 1)]  # noqa E501
+    nt.assert_equal(cut_intervals, test_cut_intervals)
+
+    assert nan_bins is None
+    assert distance_counts is None
+    assert correction_factors is None
+
+
+def test_load_homer_gzip():
+    # create matrixFileHandler instance with filetype 'homer'
+    pMatrixFile = ROOT + 'test_matrix.homer.gz'
     fh = MatrixFileHandler(pFileType='homer', pMatrixFile=pMatrixFile)
     assert fh is not None
 
@@ -207,18 +231,18 @@ def test_load_cool2(capsys):
     nt.assert_almost_equal(matrix[0].todense(), test_matrix)
 
     test_cut_intervals = sum([[('chr1', i * bin_size, (i + 1) * bin_size, 1.0) for i in range(3909)],
-                             [('chr1', 195450000, 195471971, 1.0)],
-                             [('chrX', i * bin_size, (i + 1) * bin_size, 1.0) for i in range(3420)],
-                             [('chrX', 171000000, 171031299, 1.0)],
-                             [('chrY', i * bin_size, (i + 1) * bin_size, 1.0) for i in range(1834)],
-                             [('chrY', 91700000, 91744698, 1.0)],
-                             [('chrM', 0, 16299, 1.0)]], [])
+                              [('chr1', 195450000, 195471971, 1.0)],
+                              [('chrX', i * bin_size, (i + 1) * bin_size, 1.0) for i in range(3420)],
+                              [('chrX', 171000000, 171031299, 1.0)],
+                              [('chrY', i * bin_size, (i + 1) * bin_size, 1.0) for i in range(1834)],
+                              [('chrY', 91700000, 91744698, 1.0)],
+                              [('chrM', 0, 16299, 1.0)]], [])
 
     for index, tup in enumerate(cut_intervals):
         for ind, element in enumerate(tup):
             assert element == test_cut_intervals[index][ind]
 
-    test_nan_bins = [0, 1, 2, 4]
+    test_nan_bins = [1, 2, 4, 5]
     nt.assert_almost_equal(nan_bins[:4], test_nan_bins)
 
     assert distance_counts is None
@@ -244,6 +268,52 @@ def test_save_cool():
     assert fh_test is not None
     matrix_test, cut_intervals_test, nan_bins_test, distance_counts_test, correction_factors_test = fh_test.load()
 
+    nt.assert_equal(matrix.data, matrix_test.data)
+    nt.assert_equal(cut_intervals, cut_intervals_test)
+    nt.assert_equal(nan_bins, nan_bins_test)
+    nt.assert_equal(distance_counts, distance_counts_test)
+    nt.assert_equal(correction_factors, correction_factors_test)
+
+    os.unlink(cool_outfile)
+
+
+def test_load_distance_cool():
+    cool_outfile = outfile + '.cool'
+
+    # create matrixFileHandler instance with filetype 'cool'
+    pMatrixFile = ROOT + 'GSE63525_GM12878_insitu_primary_2_5mb_hic2cool051.cool'
+    fh = MatrixFileHandler(pFileType='cool', pMatrixFile=pMatrixFile, pChrnameList=['1'], pDistance=2500000)
+    assert fh is not None
+
+    # load data
+    matrix, cut_intervals, nan_bins, distance_counts, correction_factors = fh.load()
+    # set matrix variables
+    fh.set_matrix_variables(matrix, cut_intervals, nan_bins, correction_factors, distance_counts)
+    # and save it.
+    fh.save(pName=cool_outfile, pSymmetric=True, pApplyCorrection=True)
+
+    fh_test = MatrixFileHandler(pFileType='cool', pMatrixFile=cool_outfile)
+    assert fh_test is not None
+    matrix_test, cut_intervals_test, nan_bins_test, distance_counts_test, correction_factors_test = fh_test.load()
+
+    # check distance load works as expected
+    instances, features = matrix.nonzero()
+    distances = np.absolute(instances - features)
+    # log.debug('max: {}'.format(np.max(distances)))
+    mask = distances > 1  # 2.5 mb res --> all with  2.5 Mb distance
+    assert np.sum(mask) == 0
+
+    fh = MatrixFileHandler(pFileType='cool', pChrnameList=['1'], pMatrixFile=pMatrixFile)
+    assert fh is not None
+
+    # load data
+    matrix2, _, _, _, _ = fh.load()
+    instances, features = matrix2.nonzero()
+    distances = np.absolute(instances - features)
+    mask = distances > 1  # 2.5 mb res --> all with  2.5 Mb distance
+    assert np.sum(mask) > 0
+
+    # check if load and save matrix are equal
     nt.assert_equal(matrix.data, matrix_test.data)
     nt.assert_equal(cut_intervals, cut_intervals_test)
     nt.assert_equal(nan_bins, nan_bins_test)
@@ -322,9 +392,9 @@ def test_save_cool_enforce_integer():
     assert fh_test is not None
     matrix_test, cut_intervals_test, nan_bins_test, distance_counts_test, correction_factors_test = fh_test.load()
 
-    pMatrixFile = ROOT + 'Li_et_al_2015.h5'
-    fh = MatrixFileHandler(pFileType='h5', pMatrixFile=pMatrixFile)
-    assert fh is not None
+    # pMatrixFile = ROOT + 'Li_et_al_2015.h5'
+    # fh = MatrixFileHandler(pFileType='h5', pMatrixFile=pMatrixFile)
+    # assert fh is not None
 
     # load data
     # matrix, cut_intervals, nan_bins, distance_counts, correction_factors = fh.load()
@@ -334,6 +404,10 @@ def test_save_cool_enforce_integer():
     # instances_factors *= features_factors
 
     # matrix_applied_correction = matrix.data / instances_factors
+    # mask = matrix.data == 0
+    matrix.data = np.rint(matrix.data)
+    matrix.eliminate_zeros()
+    # matrix_test.eliminate_zeros()
 
     nt.assert_almost_equal(matrix.data, matrix_test.data, decimal=0)
     nt.assert_equal(len(cut_intervals), len(cut_intervals_test))
@@ -346,7 +420,7 @@ def test_save_cool_enforce_integer():
 
 def test_load_cool_hic2cool_versions():
     pMatrixFile = ROOT + 'GSE63525_GM12878_insitu_primary_2_5mb_hic2cool042.cool'
-    hic2cool_042 = MatrixFileHandler(pFileType='cool', pMatrixFile=pMatrixFile, pCorrectionFactorTable='KR')
+    hic2cool_042 = MatrixFileHandler(pFileType='cool', pMatrixFile=pMatrixFile, pCorrectionFactorTable='KR', pCorrectionOperator='*')
     pMatrixFile = ROOT + 'GSE63525_GM12878_insitu_primary_2_5mb_hic2cool051.cool'
     hic2cool_051 = MatrixFileHandler(pFileType='cool', pMatrixFile=pMatrixFile, pCorrectionFactorTable='KR')
 
@@ -383,7 +457,7 @@ def test_save_cool_apply_division():
 
     fh_new.save(pName=cool_outfile, pSymmetric=False, pApplyCorrection=True)
 
-    fh_test = MatrixFileHandler(pFileType='cool', pMatrixFile=cool_outfile, pCorrectionOperator='/')
+    fh_test = MatrixFileHandler(pFileType='cool', pMatrixFile=cool_outfile)
     assert fh_test is not None
     matrix_test, cut_intervals_test, nan_bins_test, distance_counts_test, correction_factors_test = fh_test.load()
     pMatrixFile = ROOT + 'Li_et_al_2015.cool'
