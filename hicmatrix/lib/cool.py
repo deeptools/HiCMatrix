@@ -11,7 +11,7 @@ import gc
 import cooler
 import h5py
 import numpy as np
-from scipy.sparse import triu, csr_matrix, lil_matrix
+from scipy.sparse import triu, csr_matrix, lil_matrix, dok_matrix
 import pandas as pd
 
 from hicmatrix.utilities import toString, toBytes
@@ -38,6 +38,8 @@ class Cool(MatrixFile, object):
         self.hic2cool_version = None
         self.hicmatrix_version = None
         self.distance = None
+        self.matrixFormat = None
+        self.matrixOnly = False
 
     def getInformationCoolerBinNames(self):
         return cooler.Cooler(self.matrixFileName).bins().columns.values
@@ -60,7 +62,7 @@ class Cool(MatrixFile, object):
             log.warning('The following file was tried to open: {}'.format(self.matrixFileName))
             log.warning("The following nodes are available: {}".format(cooler.fileops.list_coolers(self.matrixFileName.split("::")[0])))
             return None, e
-        if self.chrnameList is None:
+        if self.chrnameList is None  and not self.matrixOnly:
             matrixDataFrame = cooler_file.matrix(balance=False, sparse=True, as_pixels=True)
             used_dtype = np.int32
             if np.iinfo(np.int32).max < cooler_file.info['nbins']:
@@ -88,13 +90,32 @@ class Cool(MatrixFile, object):
                 del _data
                 del _instances
                 del _features
-            matrix = csr_matrix((data, (instances, features)), shape=(np.int(cooler_file.info['nbins']), np.int(cooler_file.info['nbins'])), dtype=count_dtype)
-
+            
+            if self.matrixFormat is None or self.matrixFormat == 'csr':
+                matrix = csr_matrix((data, (instances, features)), shape=(np.int(cooler_file.info['nbins']), np.int(cooler_file.info['nbins'])), dtype=count_dtype)
+            elif  self.matrixFormat == 'lil':
+                matrix = lil_matrix((data, (instances, features)), shape=(np.int(cooler_file.info['nbins']), np.int(cooler_file.info['nbins'])), dtype=count_dtype)
+            elif  self.matrixFormat == 'dok':
+                matrix = dok_matrix((data, (instances, features)), shape=(np.int(cooler_file.info['nbins']), np.int(cooler_file.info['nbins'])), dtype=count_dtype)
+            elif  self.matrixFormat == 'raw':
+                matrix = [instances, features, data, np.int(cooler_file.info['nbins'])]
             del data
             del instances
             del features
             gc.collect()
-
+        elif self.chrnameList is None and self.matrixOnly:
+            log.debug('Load all at once')
+            matrixDataFrame = cooler_file.matrix(balance=False, sparse=True, as_pixels=True)
+            used_dtype = np.int64
+            # if np.iinfo(np.int32).max < cooler_file.info['nbins']:
+            #     used_dtype = np.int64
+            count_dtype = matrixDataFrame[0]['count'].dtype
+            matrixDataFrameChunk = matrixDataFrame[:]
+            _data = matrixDataFrameChunk['count'].values.astype(count_dtype)
+            _instances = matrixDataFrameChunk['bin1_id'].values.astype(used_dtype)
+            _features = matrixDataFrameChunk['bin2_id'].values.astype(used_dtype)
+            matrix = [_instances, _features, _data, np.int(cooler_file.info['nbins'])]
+            return matrix, None, None, None, None
         else:
             if len(self.chrnameList) == 1:
                 try:

@@ -11,7 +11,7 @@ class MatrixFileHandler():
     def __init__(self, pFileType='cool', pMatrixFile=None, pChrnameList=None,
                  pApplyCorrectionCoolerLoad=None, pBedFileHicPro=None, pCorrectionFactorTable=None,
                  pCorrectionOperator=None, pEnforceInteger=None, pAppend=None, pFileWasH5=None, pHiCInfo=None, pHic2CoolVersion=None,
-                 pDistance=None):
+                 pDistance=None, pMatrixFormat=None, pLoadMatrixOnly=None):
 
         self.class_ = getattr(importlib.import_module('.' + pFileType.lower(), package='hicmatrix.lib'), pFileType.title())
 
@@ -43,6 +43,10 @@ class MatrixFileHandler():
                 if pDistance is not None:
                     self.matrixFile.distance = pDistance
                     log.debug('self.distance {}'.format(self.matrixFile.distance))
+                if pMatrixFormat is not None:
+                    self.matrixFile.matrixFormat = pMatrixFormat
+                if pLoadMatrixOnly is not None:
+                    self.matrixFile.matrixOnly = pLoadMatrixOnly
 
     def load(self):
 

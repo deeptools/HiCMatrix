@@ -1154,3 +1154,24 @@ def test_create_from_cool():
     hic_ma.maskBins(hic_ma.nan_bins)
     assert hic_ma.matrix.shape == (1, 1)
     assert hic_ma.getBinSize() == 50000
+
+def test_load_cool_matrix_only():
+    hic = hm.hiCMatrix(ROOT + 'Li_et_al_2015.cool')
+
+    # outfile = NamedTemporaryFile(suffix='.h5', prefix='hicexplorer_test')
+    # hic.matrixFileHandler = None
+    # hic.save(pMatrixName=outfile.name)
+
+    hic_cool = hm.hiCMatrix(outfile.name)
+    hic_cool_matrix_only = hm.hiCMatrix(outfile.name, pLoadMatrixOnly=True)
+    instances = hic_cool_matrix_only.matrix[0]
+    features = hic_cool_matrix_only.matrix[1]
+    data = hic_cool_matrix_only.matrix[2]
+
+    nt.assert_equal(hic_cool.matrix.data, hic.matrix.data)
+    chrom_cool, start_cool, end_cool, _ = list(zip(*hic_cool.cut_intervals))
+    chrom, start, end, _ = list(zip(*hic_cool.cut_intervals))
+
+    nt.assert_equal(chrom_cool, chrom)
+    nt.assert_equal(start_cool, start)
+    nt.assert_equal(end_cool, end)
