@@ -18,7 +18,9 @@ class MatrixFileHandler():
         if pFileType == 'hicpro':
             self.matrixFile = self.class_(pMatrixFile=pMatrixFile, pBedFile=pBedFileHicPro)
         else:
-            self.matrixFile = self.class_(pMatrixFile)
+            log.debug('23')
+            self.matrixFile = self.class_(pMatrixFile=pMatrixFile)
+            log.debug('22 self.matrixFile.matrixFileName  {}'.format(self.matrixFile.matrixFileName))
             if pFileType == 'cool':
                 self.matrixFile.chrnameList = pChrnameList
                 if pCorrectionFactorTable is not None:

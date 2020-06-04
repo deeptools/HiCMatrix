@@ -1156,22 +1156,26 @@ def test_create_from_cool():
     assert hic_ma.getBinSize() == 50000
 
 def test_load_cool_matrix_only():
-    hic = hm.hiCMatrix(ROOT + 'Li_et_al_2015.cool')
+    hic_cool = hm.hiCMatrix(ROOT + 'Li_et_al_2015.cool', pUpperTriangleOnly=True)
 
     # outfile = NamedTemporaryFile(suffix='.h5', prefix='hicexplorer_test')
     # hic.matrixFileHandler = None
     # hic.save(pMatrixName=outfile.name)
 
-    hic_cool = hm.hiCMatrix(outfile.name)
-    hic_cool_matrix_only = hm.hiCMatrix(outfile.name, pLoadMatrixOnly=True)
+    # hic_cool = hm.hiCMatrix(outfile.name)
+    hic_cool_matrix_only = hm.hiCMatrix(ROOT + 'Li_et_al_2015.cool', pLoadMatrixOnly=True)
     instances = hic_cool_matrix_only.matrix[0]
     features = hic_cool_matrix_only.matrix[1]
     data = hic_cool_matrix_only.matrix[2]
 
-    nt.assert_equal(hic_cool.matrix.data, hic.matrix.data)
-    chrom_cool, start_cool, end_cool, _ = list(zip(*hic_cool.cut_intervals))
-    chrom, start, end, _ = list(zip(*hic_cool.cut_intervals))
+    instances_cool, features_cool = hic_cool.matrix.nonzero()
+    nt.assert_equal(hic_cool.matrix.data, data)
+    nt.assert_equal(hic_cool.matrix.data, instances)
+    nt.assert_equal(hic_cool.matrix.data, features)
 
-    nt.assert_equal(chrom_cool, chrom)
-    nt.assert_equal(start_cool, start)
-    nt.assert_equal(end_cool, end)
+    # chrom_cool, start_cool, end_cool, _ = list(zip(*hic_cool.cut_intervals))
+    # chrom, start, end, _ = list(zip(*hic_cool.cut_intervals))
+
+    # nt.assert_equal(chrom_cool, chrom)
+    # nt.assert_equal(start_cool, start)
+    # nt.assert_equal(end_cool, end)
