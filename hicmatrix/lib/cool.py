@@ -62,7 +62,7 @@ class Cool(MatrixFile, object):
             log.warning('The following file was tried to open: {}'.format(self.matrixFileName))
             log.warning("The following nodes are available: {}".format(cooler.fileops.list_coolers(self.matrixFileName.split("::")[0])))
             return None, e
-        if self.chrnameList is None  and not self.matrixOnly:
+        if self.chrnameList is None and (self.matrixFileName is None or not self.matrixOnly):
             matrixDataFrame = cooler_file.matrix(balance=False, sparse=True, as_pixels=True)
             used_dtype = np.int32
             if np.iinfo(np.int32).max < cooler_file.info['nbins']:
