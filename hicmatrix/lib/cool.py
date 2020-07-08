@@ -40,6 +40,7 @@ class Cool(MatrixFile, object):
         self.distance = None
         self.matrixFormat = None
         self.matrixOnly = False
+        self.noCutIntervals = False
 
     def getInformationCoolerBinNames(self):
         return cooler.Cooler(self.matrixFileName).bins().columns.values
@@ -230,8 +231,9 @@ class Cool(MatrixFile, object):
             return [instances, features, data, np.int(cooler_file.info['nbins'])] , None, None, None, None
 
         cut_intervals = []
-        for values in cut_intervals_data_frame.values:
-            cut_intervals.append(tuple([toString(values[0]), values[1], values[2], 1.0]))
+        if not self.noCutIntervals:
+            for values in cut_intervals_data_frame.values:
+                cut_intervals.append(tuple([toString(values[0]), values[1], values[2], 1.0]))
         del cut_intervals_data_frame
         del correction_factors_data_frame
         # try to restore nan_bins.

@@ -34,12 +34,16 @@ class Scool(MatrixFile, object):
     
     def save(self, pFileName, pSymmetric=True, pApplyCorrection=True):
 
-        pixel_list = []
-        cell_names_list = []
+        pixel_dict = {}
+        bins_dict = {}
         for coolObject in self.coolObjectsList:
             bins_data_frame, matrix_data_frame, dtype_pixel = coolObject.matrixFile.create_cooler_input(pSymmetric=pSymmetric, pApplyCorrection=pApplyCorrection)
-            pixel_list.append(matrix_data_frame)
-            cell_names_list.append(coolObject.matrixFile.matrixFileName)
+            # print('key name: {}'.format(coolObject.matrixFile.matrixFileName))
+            bins_dict[coolObject.matrixFile.matrixFileName] = bins_data_frame
+            pixel_dict[coolObject.matrixFile.matrixFileName] = matrix_data_frame
+
+            # pixel_list.append(matrix_data_frame)
+            # cell_names_list.append(coolObject.matrixFile.matrixFileName)
         
         local_temp_dir = os.path.dirname(os.path.realpath(pFileName))
         # log.debug('pFileName {}'.format(pFileName))
@@ -47,8 +51,8 @@ class Scool(MatrixFile, object):
         # log.debug('pixel_list {}'.format(pixel_list[:2]))
         # log.debug('cell_names_list {}'.format(cell_names_list[:2]))
 
-
-        cooler.create_scool(cool_uri=pFileName, bins=bins_data_frame, pixels_list=pixel_list, cell_name_list=cell_names_list,
+# cool_uri, bins_dict, cell_name_pixels_dict
+        cooler.create_scool(cool_uri=pFileName, bins_dict=bins_dict, cell_name_pixels_dict=pixel_dict,
                             dtypes=dtype_pixel,
                             ordered=True,
                             temp_dir=local_temp_dir)
