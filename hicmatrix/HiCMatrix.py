@@ -1009,6 +1009,7 @@ class hiCMatrix:
 
 
 def check_cooler(pFileName):
-    if pFileName.endswith('.cool') or cooler.io.is_cooler(pFileName) or '.mcool' in pFileName:
-        return True
+    if pFileName.endswith('.cool') or '.mcool' in pFileName:
+        if cooler.io.is_cooler(pFileName):
+            return True
     return False

@@ -403,13 +403,13 @@ class Cool(MatrixFile, object):
             info['genome-assembly'] = str(self.hic_metadata['genome-assembly'])
             del self.hic_metadata['genome-assembly']
 
-        return bins_data_frame, matrix_data_frame, dtype_pixel
+        return bins_data_frame, matrix_data_frame, dtype_pixel, info
 
     def save(self, pFileName, pSymmetric=True, pApplyCorrection=True):
         log.debug('Save in cool format')
 
         
-        bins_data_frame, matrix_data_frame, dtype_pixel = create_cooler_input(pSymmetric=pSymmetric, pApplyCorrection=pApplyCorrection)
+        bins_data_frame, matrix_data_frame, dtype_pixel, info = self.create_cooler_input(pSymmetric=pSymmetric, pApplyCorrection=pApplyCorrection)
         local_temp_dir = os.path.dirname(os.path.realpath(pFileName))
         cooler.create_cooler(cool_uri=pFileName,
                              bins=bins_data_frame,
