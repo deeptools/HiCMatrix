@@ -98,8 +98,8 @@ class Cool(MatrixFile, object):
                 matrix = lil_matrix((data, (instances, features)), shape=(np.int(cooler_file.info['nbins']), np.int(cooler_file.info['nbins'])), dtype=count_dtype)
             elif  self.matrixFormat == 'dok':
                 matrix = dok_matrix((data, (instances, features)), shape=(np.int(cooler_file.info['nbins']), np.int(cooler_file.info['nbins'])), dtype=count_dtype)
-            elif  self.matrixFormat == 'raw':
-                matrix = [instances, features, data, np.int(cooler_file.info['nbins'])]
+            # elif  self.matrixFormat == 'raw':
+            #     matrix = [instances, features, data, np.int(cooler_file.info['nbins'])]
             del data
             del instances
             del features

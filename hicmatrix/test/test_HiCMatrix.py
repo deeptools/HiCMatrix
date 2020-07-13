@@ -1163,19 +1163,30 @@ def test_load_cool_matrix_only():
     # hic.save(pMatrixName=outfile.name)
 
     # hic_cool = hm.hiCMatrix(outfile.name)
-    hic_cool_matrix_only = hm.hiCMatrix(ROOT + 'Li_et_al_2015.cool', pLoadMatrixOnly=True)
+    hic_cool_matrix_only = hm.hiCMatrix(ROOT + 'Li_et_al_2015.cool', pUpperTriangleOnly=True, pLoadMatrixOnly=True)
     instances = hic_cool_matrix_only.matrix[0]
     features = hic_cool_matrix_only.matrix[1]
     data = hic_cool_matrix_only.matrix[2]
 
     instances_cool, features_cool = hic_cool.matrix.nonzero()
     nt.assert_equal(hic_cool.matrix.data, data)
-    nt.assert_equal(hic_cool.matrix.data, instances)
-    nt.assert_equal(hic_cool.matrix.data, features)
+    nt.assert_equal(instances_cool, instances)
+    nt.assert_equal(features_cool, features)
 
-    # chrom_cool, start_cool, end_cool, _ = list(zip(*hic_cool.cut_intervals))
-    # chrom, start, end, _ = list(zip(*hic_cool.cut_intervals))
+# def test_load_cool_matrix_raw():
+#     hic_cool = hm.hiCMatrix(ROOT + 'Li_et_al_2015.cool', pUpperTriangleOnly=True)
 
-    # nt.assert_equal(chrom_cool, chrom)
-    # nt.assert_equal(start_cool, start)
-    # nt.assert_equal(end_cool, end)
+#     # outfile = NamedTemporaryFile(suffix='.h5', prefix='hicexplorer_test')
+#     # hic.matrixFileHandler = None
+#     # hic.save(pMatrixName=outfile.name)
+
+#     # hic_cool = hm.hiCMatrix(outfile.name)
+#     hic_cool_matrix_only = hm.hiCMatrix(ROOT + 'Li_et_al_2015.cool', pUpperTriangleOnly=True, pLoadMatrixOnly=True)
+#     instances = hic_cool_matrix_only.matrix[0]
+#     features = hic_cool_matrix_only.matrix[1]
+#     data = hic_cool_matrix_only.matrix[2]
+
+#     instances_cool, features_cool = hic_cool.matrix.nonzero()
+#     nt.assert_equal(hic_cool.matrix.data, data)
+#     nt.assert_equal(instances_cool, instances)
+#     nt.assert_equal(features_cool, features)

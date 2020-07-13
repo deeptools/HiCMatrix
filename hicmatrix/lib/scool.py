@@ -37,7 +37,7 @@ class Scool(MatrixFile, object):
         pixel_dict = {}
         bins_dict = {}
         for coolObject in self.coolObjectsList:
-            bins_data_frame, matrix_data_frame, dtype_pixel = coolObject.matrixFile.create_cooler_input(pSymmetric=pSymmetric, pApplyCorrection=pApplyCorrection)
+            bins_data_frame, matrix_data_frame, dtype_pixel, info = coolObject.matrixFile.create_cooler_input(pSymmetric=pSymmetric, pApplyCorrection=pApplyCorrection)
             # print('key name: {}'.format(coolObject.matrixFile.matrixFileName))
             bins_dict[coolObject.matrixFile.matrixFileName] = bins_data_frame
             pixel_dict[coolObject.matrixFile.matrixFileName] = matrix_data_frame
