@@ -27,31 +27,36 @@ class Scool(MatrixFile, object):
         super().__init__(pMatrixFile)
         log.debug('scool object created')
         self.coolObjectsList = None
+        self.bins = None
+        self.pixel_list = None
+        self.name_list = None
 
     def load(self):
         raise NotImplementedError('Please use the specific cell to load the individual cool file from the scool file')
         exit(1)
-    
+
     def save(self, pFileName, pSymmetric=True, pApplyCorrection=True):
 
         pixel_dict = {}
         bins_dict = {}
-        for coolObject in self.coolObjectsList:
-            bins_data_frame, matrix_data_frame, dtype_pixel, info = coolObject.matrixFile.create_cooler_input(pSymmetric=pSymmetric, pApplyCorrection=pApplyCorrection)
-            # print('key name: {}'.format(coolObject.matrixFile.matrixFileName))
-            bins_dict[coolObject.matrixFile.matrixFileName] = bins_data_frame
-            pixel_dict[coolObject.matrixFile.matrixFileName] = matrix_data_frame
 
-            # pixel_list.append(matrix_data_frame)
-            # cell_names_list.append(coolObject.matrixFile.matrixFileName)
-        
+        if self.coolObjectsList is not None:
+            for coolObject in self.coolObjectsList:
+                bins_data_frame, matrix_data_frame, dtype_pixel, info = coolObject.matrixFile.create_cooler_input(pSymmetric=pSymmetric, pApplyCorrection=pApplyCorrection)
+                bins_dict[coolObject.matrixFile.matrixFileName] = bins_data_frame
+                pixel_dict[coolObject.matrixFile.matrixFileName] = matrix_data_frame
+
+        else:
+            try:
+                for i, pixels in enumerate(self.pixel_list):
+                    bins_dict[self.name_list[i]] = self.bins
+                    pixel_dict[self.name_list[i]] = pixels
+                    log.debug('self.name_list[i] {}'.format(self.name_list[i]))
+            except Exception as exp:
+                log.debug('Exception {}'.format(str(exp)))
+            dtype_pixel = None
         local_temp_dir = os.path.dirname(os.path.realpath(pFileName))
-        # log.debug('pFileName {}'.format(pFileName))
-        # log.debug('bins_data_frame {}'.format(bins_data_frame))
-        # log.debug('pixel_list {}'.format(pixel_list[:2]))
-        # log.debug('cell_names_list {}'.format(cell_names_list[:2]))
 
-# cool_uri, bins_dict, cell_name_pixels_dict
         cooler.create_scool(cool_uri=pFileName, bins_dict=bins_dict, cell_name_pixels_dict=pixel_dict,
                             dtypes=dtype_pixel,
                             ordered=True,
