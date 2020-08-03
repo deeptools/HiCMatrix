@@ -24,7 +24,7 @@ class H5(MatrixFile, object):
         """
         log.debug('Load in h5 format')
 
-        with tables.open_file(self.matrixFileName) as f:
+        with tables.open_file(self.matrixFileName, 'r') as f:
             parts = {}
             try:
                 for matrix_part in ('data', 'indices', 'indptr', 'shape'):

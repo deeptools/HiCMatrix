@@ -4,6 +4,9 @@ import os
 import pytest
 from scipy.sparse.csr import csr_matrix
 import numpy as np
+from copy import deepcopy
+from tempfile import NamedTemporaryFile
+import cooler
 import logging
 log = logging.getLogger(__name__)
 
@@ -472,3 +475,81 @@ def test_save_cool_apply_division():
     nt.assert_equal(distance_counts, distance_counts_test)
 
     os.unlink(cool_outfile)
+
+
+def test_save_scool_matrixHandlersCool():
+
+    outfile = NamedTemporaryFile(suffix='.scool', prefix='hicmatrix_scool_test')
+
+    pMatrixFile = ROOT + 'GSE63525_GM12878_insitu_primary_2_5mb_hic2cool051.cool'
+
+    matrixFileHandlerInput = MatrixFileHandler(pFileType='cool', pMatrixFile=pMatrixFile)
+    matrix, cut_intervals, nan_bins, \
+        distance_counts, correction_factors = matrixFileHandlerInput.load()
+    matrixFileHandlerOutput1 = MatrixFileHandler(pFileType='cool', pMatrixFile='cell1', pEnforceInteger=False, pFileWasH5=False, pHic2CoolVersion=None)
+    matrixFileHandlerOutput1.set_matrix_variables(matrix, cut_intervals, nan_bins, correction_factors, distance_counts)
+
+    matrixFileHandlerOutput2 = MatrixFileHandler(pFileType='cool', pMatrixFile='cell2', pEnforceInteger=False, pFileWasH5=False, pHic2CoolVersion=None)
+    matrixFileHandlerOutput2.set_matrix_variables(matrix, cut_intervals, nan_bins, correction_factors, distance_counts)
+
+    matrixFileHandlerOutput3 = MatrixFileHandler(pFileType='cool', pMatrixFile='cell3', pEnforceInteger=False, pFileWasH5=False, pHic2CoolVersion=None)
+    matrixFileHandlerOutput3.set_matrix_variables(matrix, cut_intervals, nan_bins, correction_factors, distance_counts)
+
+    matrixFileHandler = MatrixFileHandler(pFileType='scool')
+    matrixFileHandler.matrixFile.coolObjectsList = [matrixFileHandlerOutput1, matrixFileHandlerOutput2, matrixFileHandlerOutput3]
+
+    matrixFileHandler.save(outfile.name, pSymmetric=True, pApplyCorrection=False)
+
+    content_of_scool = cooler.fileops.list_scool_cells(outfile.name)
+    content_expected = ['/cells/cell1', '/cells/cell2', '/cells/cell3']
+    for content in content_expected:
+        assert content in content_of_scool
+
+
+def test_save_scool_pixeltables():
+    outfile = NamedTemporaryFile(suffix='.scool', prefix='hicmatrix_scool_test')
+
+    pMatrixFile = ROOT + 'GSE63525_GM12878_insitu_primary_2_5mb_hic2cool051.cool'
+
+    cooler_obj = cooler.Cooler(pMatrixFile)
+    bins = cooler_obj.bins()[:]
+    pixels = cooler_obj.pixels()[:]
+
+    pixelsList = [pixels, pixels, pixels]
+    matrices_list = ['cell1', 'cell2', 'cell3']
+    matrixFileHandler = MatrixFileHandler(pFileType='scool')
+    matrixFileHandler.matrixFile.coolObjectsList = None
+    matrixFileHandler.matrixFile.bins = bins
+    matrixFileHandler.matrixFile.pixel_list = pixelsList
+    matrixFileHandler.matrixFile.name_list = matrices_list
+    matrixFileHandler.save(outfile.name, pSymmetric=True, pApplyCorrection=False)
+
+    content_of_scool = cooler.fileops.list_scool_cells(outfile.name)
+    content_expected = ['/cells/cell1', '/cells/cell2', '/cells/cell3']
+    for content in content_expected:
+        assert content in content_of_scool
+
+
+def test_load_cool_matrix_only():
+
+    pMatrixFile = ROOT + 'GSE63525_GM12878_insitu_primary_2_5mb_hic2cool051.cool'
+
+    matrixFileHandlerInput = MatrixFileHandler(pFileType='cool', pMatrixFile=pMatrixFile, pLoadMatrixOnly=True)
+    matrix, cut_intervals, nan_bins, \
+        distance_counts, correction_factors = matrixFileHandlerInput.load()
+
+    assert len(matrix) == 4
+    assert cut_intervals is None
+    assert nan_bins is None
+    assert distance_counts is None
+    assert correction_factors is None
+
+    matrixFileHandlerInput2 = MatrixFileHandler(pFileType='cool', pMatrixFile=pMatrixFile)
+    matrix2, cut_intervals2, nan_bins2, \
+        distance_counts2, correction_factors2 = matrixFileHandlerInput2.load()
+
+    instances, features = matrix2.nonzero()
+    nt.assert_almost_equal(matrix[0], instances, decimal=1)
+    nt.assert_almost_equal(matrix[1], features, decimal=1)
+    nt.assert_almost_equal(matrix[2], matrix2.data, decimal=1)
+    assert matrix[3] == matrix2.shape[0]
