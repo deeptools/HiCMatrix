@@ -60,7 +60,7 @@ class Scool(MatrixFile, object):
 
         local_temp_dir = os.path.dirname(os.path.realpath(pFileName))
 
-        cooler.create_scool(cool_uri=pFileName, bins_dict=bins_dict, cell_name_pixels_dict=pixel_dict,
+        cooler.create_scool(cool_uri=pFileName, bins=bins_dict, cell_name_pixels_dict=pixel_dict,
                             dtypes=dtype_pixel,
                             ordered=True,
                             temp_dir=local_temp_dir)
