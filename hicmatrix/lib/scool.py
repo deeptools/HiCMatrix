@@ -48,13 +48,16 @@ class Scool(MatrixFile, object):
 
         else:
             try:
+                dtype_pixel = {'bin1_id': np.int32, 'bin2_id': np.int32, 'count': self.pixel_list[0]['count'].dtype}
+                # dtype_pixel = self.pixel_list[0]['count'].dtype
+
                 for i, pixels in enumerate(self.pixel_list):
                     bins_dict[self.name_list[i]] = self.bins
                     pixel_dict[self.name_list[i]] = pixels
                     log.debug('self.name_list[i] {}'.format(self.name_list[i]))
             except Exception as exp:
                 log.debug('Exception {}'.format(str(exp)))
-            dtype_pixel = None
+
         local_temp_dir = os.path.dirname(os.path.realpath(pFileName))
 
         cooler.create_scool(cool_uri=pFileName, bins_dict=bins_dict, cell_name_pixels_dict=pixel_dict,

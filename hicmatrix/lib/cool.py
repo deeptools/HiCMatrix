@@ -91,12 +91,12 @@ class Cool(MatrixFile, object):
                 del _data
                 del _instances
                 del _features
-            
+
             if self.matrixFormat is None or self.matrixFormat == 'csr':
                 matrix = csr_matrix((data, (instances, features)), shape=(np.int(cooler_file.info['nbins']), np.int(cooler_file.info['nbins'])), dtype=count_dtype)
-            elif  self.matrixFormat == 'lil':
+            elif self.matrixFormat == 'lil':
                 matrix = lil_matrix((data, (instances, features)), shape=(np.int(cooler_file.info['nbins']), np.int(cooler_file.info['nbins'])), dtype=count_dtype)
-            elif  self.matrixFormat == 'dok':
+            elif self.matrixFormat == 'dok':
                 matrix = dok_matrix((data, (instances, features)), shape=(np.int(cooler_file.info['nbins']), np.int(cooler_file.info['nbins'])), dtype=count_dtype)
             # elif  self.matrixFormat == 'raw':
             #     matrix = [instances, features, data, np.int(cooler_file.info['nbins'])]
@@ -176,7 +176,7 @@ class Cool(MatrixFile, object):
                 matrix.eliminate_zeros()
                 data = matrix.data
             if len(data) > 1:
-                
+
                 if not self.matrixOnly:
                     matrix.data = matrix.data.astype(float)
                 else:
@@ -228,7 +228,7 @@ class Cool(MatrixFile, object):
                             log.debug('hu')
 
         elif self.matrixOnly:
-            return [instances, features, data, np.int(cooler_file.info['nbins'])] , None, None, None, None
+            return [instances, features, data, np.int(cooler_file.info['nbins'])], None, None, None, None
 
         cut_intervals = []
         if not self.noCutIntervals:
@@ -258,7 +258,7 @@ class Cool(MatrixFile, object):
         distance_counts = None
 
         return matrix, cut_intervals, nan_bins, distance_counts, correction_factors
-    
+
     def create_cooler_input(self, pSymmetric=True, pApplyCorrection=True):
         self.matrix.eliminate_zeros()
 
@@ -408,7 +408,6 @@ class Cool(MatrixFile, object):
     def save(self, pFileName, pSymmetric=True, pApplyCorrection=True):
         log.debug('Save in cool format')
 
-        
         bins_data_frame, matrix_data_frame, dtype_pixel, info = self.create_cooler_input(pSymmetric=pSymmetric, pApplyCorrection=pApplyCorrection)
         local_temp_dir = os.path.dirname(os.path.realpath(pFileName))
         cooler.create_cooler(cool_uri=pFileName,

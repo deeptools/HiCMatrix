@@ -96,9 +96,9 @@ class install(_install):
 install_requires_py = ["numpy >= 1.16.*",
                        "scipy >= 1.2.*",
                        "tables >= 3.5.*",
-                       "pandas == 0.25.*",
-                       "cooler >= 0.8.*",
-                       "intervaltree == 3.0.*"
+                       "pandas >= 0.25.*",
+                       "cooler >= 0.8.9",
+                       "intervaltree >= 3.0.*"
                        ]
 
 setup(
@@ -107,12 +107,11 @@ setup(
     author='Joachim Wolff, Leily Rabbani, Vivek Bhardwaj, Fidel Ramirez',
     author_email='wolffj@informatik.uni-freiburg.de',
     packages=find_packages(),
-
     include_package_data=True,
     package_dir={'hicmatrix': 'hicmatrix'},
     url='https://github.com/deeptools/HiCMatrix',
     license='LICENSE',
-    description='Helper package which implements HiCMatrix class for HiCExplorer and pyGenomeTracks',
+    description='Helper package which implements HiCMatrix class for HiCExplorer, pyGenomeTracks and scHiCExplorer.',
     long_description=open('README.rst').read(),
     classifiers=[
         'Intended Audience :: Science/Research',

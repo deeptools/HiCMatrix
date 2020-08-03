@@ -2,5 +2,5 @@ numpy >= 1.16.*
 scipy >= 1.2.*
 pandas >= 0.25.*
 pytables >= 3.5.*
-cooler >= 0.8.5
+cooler >= 0.8.9
 intervaltree >= 3.0.*

@@ -27,8 +27,8 @@ class hiCMatrix:
     get sub matrices by chrname.
     """
 
-    def __init__(self, pMatrixFile=None, pChrnameList=None, pDistance=None, pNoIntervalTree=None, pUpperTriangleOnly=None, 
-                    pMatrixFormat=None, pRestoreMaskedBins=None, pLoadMatrixOnly=None):
+    def __init__(self, pMatrixFile=None, pChrnameList=None, pDistance=None, pNoIntervalTree=None, pUpperTriangleOnly=None,
+                 pMatrixFormat=None, pRestoreMaskedBins=None, pLoadMatrixOnly=None):
         self.non_homogeneous_warning_already_printed = False
         self.bin_size = None
         self.bin_size_homogeneous = None  # track if the bins are equally spaced or not

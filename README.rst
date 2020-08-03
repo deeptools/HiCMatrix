@@ -7,6 +7,7 @@ because mutual dependencies are resolved.
 
 With version 8 we dropped the support for Python 2.
 
+Version 14 introduced the official support for scool file format, used by scHiCExplorer since version 5: https://github.com/joachimwolff/scHiCExplorer and https://schicexplorer.readthedocs.io/en/latest/.
 Read support
 -------------
 
@@ -20,6 +21,7 @@ Write support
 
 - h5
 - cool
+- scool
 - homer
 - ginteractions
 

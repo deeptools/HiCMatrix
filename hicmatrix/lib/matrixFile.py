@@ -6,7 +6,7 @@ class MatrixFile():
 
     def __init__(self, pMatrixFileName=None, pBedFile=None):
         self.matrixFileName = pMatrixFileName
-        log.debug('self.matrixFileName {}'.format(self.matrixFileName ))
+        log.debug('self.matrixFileName {}'.format(self.matrixFileName))
         self.matrix = None
         self.cut_intervals = None
         self.nan_bins = None
