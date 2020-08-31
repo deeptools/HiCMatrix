@@ -967,7 +967,7 @@ class hiCMatrix:
             for chrom, (start_bin, end_bin) in self.chrBinBoundaries.items():
 
                 chrom, start, end, _ = self.cut_intervals[end_bin - 1]
-                chrom_sizes[chrom] = end
+                chrom_sizes[chrom] = end - start + 1
 
             return chrom_sizes
 
