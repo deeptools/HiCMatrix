@@ -951,7 +951,7 @@ def test_get_chromosome_sizes():
     nt.assert_equal(hic.getMatrix(), matrix)
 
     # define expected outcome
-    expected_sizes = OrderedDict([('a', 30), ('b', 50)])
+    expected_sizes = OrderedDict([('a', 31), ('b', 21)])
 
     chrom_sizes = hic.get_chromosome_sizes()
 
@@ -961,7 +961,7 @@ def test_get_chromosome_sizes():
     new_cut_intervals = [('a', 0, 10, 1), ('b', 10, 20, 1),
                          ('b', 20, 30, 1), ('c', 30, 40, 1), ('c', 40, 90, 1)]
 
-    expected_sizes = OrderedDict([('a', 10), ('b', 30), ('c', 90)])
+    expected_sizes = OrderedDict([('a', 11), ('b', 21), ('c', 61)])
 
     hic.setMatrix(hic.matrix, new_cut_intervals)
 

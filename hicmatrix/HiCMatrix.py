@@ -965,9 +965,9 @@ class hiCMatrix:
             chrom_sizes = OrderedDict()
             # for chrom, (start_bin, end_bin) in iteritems(self.chrBinBoundaries):
             for chrom, (start_bin, end_bin) in self.chrBinBoundaries.items():
-
-                chrom, start, end, _ = self.cut_intervals[end_bin - 1]
-                chrom_sizes[chrom] = end - start + 1
+                chrom, start0, end0, _ = self.cut_intervals[start_bin]
+                chrom, start1, end1, _ = self.cut_intervals[end_bin - 1]
+                chrom_sizes[chrom] = end1 - start0 + 1
 
             return chrom_sizes
 
