@@ -291,7 +291,7 @@ def test_save():
     outfile_cool = NamedTemporaryFile(suffix='.cool', delete=False)
     outfile_cool.close()
 
-    outfile_h5 = NamedTemporaryFile(suffix='.cool', delete=False)
+    outfile_h5 = NamedTemporaryFile(suffix='.h5', delete=False)
     outfile_h5.close()
 
     hic = hm.hiCMatrix()
