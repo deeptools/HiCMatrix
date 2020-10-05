@@ -1,18 +1,18 @@
 language: c
 sudo: true
 
-deploy:
-  provider: pypi
-  user: bgruening
-  skip_cleanup: true
-  password:
-    secure: AZVacwZdbN+vKXpZm/XjhRrlkJ9LBEn3Xzz7HkOo/yOk6M2rOHpjumsYzIB6YXnJGrR8ZdOJ3nDOwRaqq3LItXLcH05Pf6cajNwGzD3XLKFpqT+M+RYyki+hKjpEZtdKkkxas4FJQ1+x+yQkbYOjyWYz25xJOaAMOmyTmSZio8vK/0k/XJA+yg1uBHUc+xlP7MKygDItXDx0WVEKhbh+I/EqIi2D+SJFtgao/Y25qFzpplmXE5goe6eM4vAFrAzlahadfWggy2N+fx7gkMB5MOzxeUwKYbp7d2qftnSsBO+9P1Bh78g1nBw1MH3a+zqCGeMTmdbU1VdZUXuUsc5aiEL2lVcYOcB499rmssLuS5FALrtVxmEVMRVd/TQD8BOTmZIc7msuoviNt/HChEN6ldkNCHDh1paAnSMsbSmvKmFKr4rXkQNhvKa1D+78MtypPdxgt5cap+WMxGou4+WpzQ2OYfCrcFLWPwIyyBZ4tUr5xXX84AOmyD2OopbFq/1k1wkBvITWexncxxHdFQfCmzO5lDLruWKzr5FyrrBAgZERveqy5PHMp6v8teHfHTVnUMTuB2LZFltBdJL4U+bsOKy0WColpcppBo/kbvSQJY1YgMPuYBRrK1P1r0NkP83kywoAFwC0uMjfBvPcbYGQJHLLRYUYlDDmdao+sbMF6u8=
-  on:
-    tags: true
-  distributions: "sdist bdist_wheel"
-  python:
-    - 3.6
-    - 3.7
+# deploy:
+#   provider: pypi
+#   user: bgruening
+#   skip_cleanup: true
+#   password:
+#     secure: AZVacwZdbN+vKXpZm/XjhRrlkJ9LBEn3Xzz7HkOo/yOk6M2rOHpjumsYzIB6YXnJGrR8ZdOJ3nDOwRaqq3LItXLcH05Pf6cajNwGzD3XLKFpqT+M+RYyki+hKjpEZtdKkkxas4FJQ1+x+yQkbYOjyWYz25xJOaAMOmyTmSZio8vK/0k/XJA+yg1uBHUc+xlP7MKygDItXDx0WVEKhbh+I/EqIi2D+SJFtgao/Y25qFzpplmXE5goe6eM4vAFrAzlahadfWggy2N+fx7gkMB5MOzxeUwKYbp7d2qftnSsBO+9P1Bh78g1nBw1MH3a+zqCGeMTmdbU1VdZUXuUsc5aiEL2lVcYOcB499rmssLuS5FALrtVxmEVMRVd/TQD8BOTmZIc7msuoviNt/HChEN6ldkNCHDh1paAnSMsbSmvKmFKr4rXkQNhvKa1D+78MtypPdxgt5cap+WMxGou4+WpzQ2OYfCrcFLWPwIyyBZ4tUr5xXX84AOmyD2OopbFq/1k1wkBvITWexncxxHdFQfCmzO5lDLruWKzr5FyrrBAgZERveqy5PHMp6v8teHfHTVnUMTuB2LZFltBdJL4U+bsOKy0WColpcppBo/kbvSQJY1YgMPuYBRrK1P1r0NkP83kywoAFwC0uMjfBvPcbYGQJHLLRYUYlDDmdao+sbMF6u8=
+#   on:
+#     tags: true
+#   distributions: "sdist bdist_wheel"
+#   python:
+#     - 3.6
+#     - 3.7
   
 
 env:
