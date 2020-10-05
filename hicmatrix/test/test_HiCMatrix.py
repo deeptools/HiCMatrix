@@ -43,6 +43,21 @@ def test_load_h5_save_and_load_cool():
     nt.assert_equal(end_cool, end)
 
 
+def test_load_h5_load_cool_weight():
+    hic_h5 = hm.hiCMatrix(ROOT + 'Li_et_al_2015.h5')
+    hic_cool = hm.hiCMatrix(ROOT + 'Li_et_al_2015.cool')
+
+    # there is always a small gap due to rounding errors and inaccurate floating operations
+    # test if it is equal for up to 10 decimal positions
+    nt.assert_almost_equal(hic_cool.matrix.data, hic_h5.matrix.data, decimal=10)
+    chrom_cool, start_cool, end_cool, _ = list(zip(*hic_cool.cut_intervals))
+    chrom, start, end, _ = list(zip(*hic_cool.cut_intervals))
+
+    nt.assert_equal(chrom_cool, chrom)
+    nt.assert_equal(start_cool, start)
+    nt.assert_equal(end_cool, end)
+
+
 def test_load_h5_save_and_load_cool_2():
     hic = hm.hiCMatrix(ROOT + 'small_test_matrix.h5')
 
@@ -315,6 +330,7 @@ def test_save():
     h5_test = hm.hiCMatrix(outfile_h5.name)
 
     # test cool
+    hic.matrixFileHandler = None
     hic.save(outfile_cool.name)
     cool_test = hm.hiCMatrix(outfile_cool.name)
 

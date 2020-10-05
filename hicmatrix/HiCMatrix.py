@@ -50,7 +50,7 @@ class hiCMatrix:
             fileType = 'cool'
             if pMatrixFile.endswith('.h5'):
                 fileType = 'h5'
-            self.matrixFileHandler = MatrixFileHandler(pFileType=fileType, pApplyCorrectionCoolerLoad=False, pMatrixFile=pMatrixFile, pChrnameList=pChrnameList, pDistance=pDistance, pMatrixFormat=pMatrixFormat, pLoadMatrixOnly=pLoadMatrixOnly)
+            self.matrixFileHandler = MatrixFileHandler(pFileType=fileType, pMatrixFile=pMatrixFile, pChrnameList=pChrnameList, pDistance=pDistance, pMatrixFormat=pMatrixFormat, pLoadMatrixOnly=pLoadMatrixOnly)
             log.debug('init time: {}'.format(time.time() - start_time))
             matrixFileHandler_load = self.matrixFileHandler.load()
             # check if there was any exception thrown in the load function
