@@ -43,6 +43,21 @@ def test_load_h5_save_and_load_cool():
     nt.assert_equal(end_cool, end)
 
 
+def test_load_h5_load_cool_weight():
+    hic_h5 = hm.hiCMatrix(ROOT + 'Li_et_al_2015.h5')
+    hic_cool = hm.hiCMatrix(ROOT + 'Li_et_al_2015.cool')
+
+    # there is always a small gap due to rounding errors and inaccurate floating operations
+    # test if it is equal for up to 10 decimal positions
+    nt.assert_almost_equal(hic_cool.matrix.data, hic_h5.matrix.data, decimal=10)
+    chrom_cool, start_cool, end_cool, _ = list(zip(*hic_cool.cut_intervals))
+    chrom, start, end, _ = list(zip(*hic_cool.cut_intervals))
+
+    nt.assert_equal(chrom_cool, chrom)
+    nt.assert_equal(start_cool, start)
+    nt.assert_equal(end_cool, end)
+
+
 def test_load_h5_save_and_load_cool_2():
     hic = hm.hiCMatrix(ROOT + 'small_test_matrix.h5')
 
@@ -291,7 +306,7 @@ def test_save():
     outfile_cool = NamedTemporaryFile(suffix='.cool', delete=False)
     outfile_cool.close()
 
-    outfile_h5 = NamedTemporaryFile(suffix='.cool', delete=False)
+    outfile_h5 = NamedTemporaryFile(suffix='.h5', delete=False)
     outfile_h5.close()
 
     hic = hm.hiCMatrix()
@@ -315,6 +330,7 @@ def test_save():
     h5_test = hm.hiCMatrix(outfile_h5.name)
 
     # test cool
+    hic.matrixFileHandler = None
     hic.save(outfile_cool.name)
     cool_test = hm.hiCMatrix(outfile_cool.name)
 
@@ -929,6 +945,45 @@ def test_printchrtoremove(capsys):
     hic.printchrtoremove(to_remove)
 
     nt.assert_equal(hic.prev_to_remove, np.array(to_remove))
+
+
+def test_get_chromosome_sizes_real():
+    # get matrix
+    hic = hm.hiCMatrix()
+    cut_intervals = [('a', 0, 10, 1), ('a', 10, 20, 1),
+                     ('a', 20, 30, 1), ('b', 30, 40, 1), ('b', 40, 50, 1)]
+
+    hic.nan_bins = []
+
+    matrix = np.array([[1, 8, 5, 3, 0],
+                       [0, 4, 15, 5, 1],
+                       [0, 0, 0, 0, 2],
+                       [0, 0, 0, 0, 1],
+                       [0, 0, 0, 0, 0]])
+
+    hic.matrix = csr_matrix(matrix)
+    hic.setMatrix(hic.matrix, cut_intervals)
+
+    nt.assert_equal(hic.getMatrix(), matrix)
+
+    # define expected outcome
+    expected_sizes = OrderedDict([('a', 31), ('b', 21)])
+
+    chrom_sizes = hic.get_chromosome_sizes_real()
+
+    nt.assert_equal(chrom_sizes, expected_sizes)
+
+    # define new intervals and test again
+    new_cut_intervals = [('a', 0, 10, 1), ('b', 10, 20, 1),
+                         ('b', 20, 30, 1), ('c', 30, 40, 1), ('c', 40, 90, 1)]
+
+    expected_sizes = OrderedDict([('a', 11), ('b', 21), ('c', 61)])
+
+    hic.setMatrix(hic.matrix, new_cut_intervals)
+
+    chrom_sizes = hic.get_chromosome_sizes_real()
+
+    nt.assert_equal(chrom_sizes, expected_sizes)
 
 
 def test_get_chromosome_sizes():
