@@ -931,7 +931,7 @@ def test_printchrtoremove(capsys):
     nt.assert_equal(hic.prev_to_remove, np.array(to_remove))
 
 
-def test_get_chromosome_sizes():
+def test_get_chromosome_sizes_real():
     # get matrix
     hic = hm.hiCMatrix()
     cut_intervals = [('a', 0, 10, 1), ('a', 10, 20, 1),
@@ -953,7 +953,7 @@ def test_get_chromosome_sizes():
     # define expected outcome
     expected_sizes = OrderedDict([('a', 31), ('b', 21)])
 
-    chrom_sizes = hic.get_chromosome_sizes()
+    chrom_sizes = hic.get_chromosome_sizes_real()
 
     nt.assert_equal(chrom_sizes, expected_sizes)
 
@@ -962,6 +962,45 @@ def test_get_chromosome_sizes():
                          ('b', 20, 30, 1), ('c', 30, 40, 1), ('c', 40, 90, 1)]
 
     expected_sizes = OrderedDict([('a', 11), ('b', 21), ('c', 61)])
+
+    hic.setMatrix(hic.matrix, new_cut_intervals)
+
+    chrom_sizes = hic.get_chromosome_sizes_real()
+
+    nt.assert_equal(chrom_sizes, expected_sizes)
+
+
+def test_get_chromosome_sizes():
+    # get matrix
+    hic = hm.hiCMatrix()
+    cut_intervals = [('a', 0, 10, 1), ('a', 10, 20, 1),
+                     ('a', 20, 30, 1), ('b', 30, 40, 1), ('b', 40, 50, 1)]
+
+    hic.nan_bins = []
+
+    matrix = np.array([[1, 8, 5, 3, 0],
+                       [0, 4, 15, 5, 1],
+                       [0, 0, 0, 0, 2],
+                       [0, 0, 0, 0, 1],
+                       [0, 0, 0, 0, 0]])
+
+    hic.matrix = csr_matrix(matrix)
+    hic.setMatrix(hic.matrix, cut_intervals)
+
+    nt.assert_equal(hic.getMatrix(), matrix)
+
+    # define expected outcome
+    expected_sizes = OrderedDict([('a', 30), ('b', 50)])
+
+    chrom_sizes = hic.get_chromosome_sizes()
+
+    nt.assert_equal(chrom_sizes, expected_sizes)
+
+    # define new intervals and test again
+    new_cut_intervals = [('a', 0, 10, 1), ('b', 10, 20, 1),
+                         ('b', 20, 30, 1), ('c', 30, 40, 1), ('c', 40, 90, 1)]
+
+    expected_sizes = OrderedDict([('a', 10), ('b', 30), ('c', 90)])
 
     hic.setMatrix(hic.matrix, new_cut_intervals)
 

@@ -960,7 +960,11 @@ class hiCMatrix:
         log.info('{}: {} {}'.format(label, len(to_remove), cnt))
         self.prev_to_remove = to_remove
 
-    def get_chromosome_sizes(self):
+    def get_chromosome_sizes_real(self):
+        '''
+        Function returns the size of a chromosome as it is stored in the  matrix.
+        The size can differ if e.g. some area from the start or end of a chromosome is not present in the interaction matrix.
+        '''
         if self.chrBinBoundaries and len(self.chrBinBoundaries) > 0:
             chrom_sizes = OrderedDict()
             # for chrom, (start_bin, end_bin) in iteritems(self.chrBinBoundaries):
@@ -968,6 +972,20 @@ class hiCMatrix:
                 chrom, start0, end0, _ = self.cut_intervals[start_bin]
                 chrom, start1, end1, _ = self.cut_intervals[end_bin - 1]
                 chrom_sizes[chrom] = end1 - start0 + 1
+
+            return chrom_sizes
+
+    def get_chromosome_sizes(self):
+        '''
+        Function returns the size of a chromosome as it is stored in the  matrix, assuming the chromosome starts is always at its genomic position 0.
+        '''
+        if self.chrBinBoundaries and len(self.chrBinBoundaries) > 0:
+            chrom_sizes = OrderedDict()
+            # for chrom, (start_bin, end_bin) in iteritems(self.chrBinBoundaries):
+            for chrom, (start_bin, end_bin) in self.chrBinBoundaries.items():
+
+                chrom, start, end, _ = self.cut_intervals[end_bin - 1]
+                chrom_sizes[chrom] = end
 
             return chrom_sizes
 
