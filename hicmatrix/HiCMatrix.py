@@ -170,7 +170,7 @@ class hiCMatrix:
                 return self.bin_size
             # If there are more bins, the diff will be compared
             # to the median of the differences between starts
-            median = int(np.median(np.concatenate([np.diff([start for chro, start, end, extra in cut_intervals if chro == cur_chrom]) for cur_chrom, nb in Counter(chrom).items() if nb > 1])))
+            median = int(np.median(np.concatenate([np.diff([start for chro, start, end, extra in self.cut_intervals if chro == cur_chrom]) for cur_chrom, nb in Counter(chrom).items() if nb > 1])))
 
             # check if the bin size is
             # homogeneous
