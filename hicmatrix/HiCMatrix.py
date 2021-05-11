@@ -354,7 +354,7 @@ class hiCMatrix:
     def convert_to_zscore_matrix(self, maxdepth=None, perchr=False):
         return self.convert_to_obs_exp_matrix(maxdepth=maxdepth, zscore=True, perchr=perchr)
 
-    def convert_to_obs_exp_matrix(self, maxdepth=None, zscore=False, perchr=False):
+    def convert_to_obs_exp_matrix(self, maxdepth=None, zscore=False, perchr=False, pSkipTriu=False):
         """
         Converts a corrected counts matrix into a
         obs / expected matrix or z-scores fast.
@@ -395,10 +395,12 @@ class hiCMatrix:
             # max_depth_in_bis
             # (this is done by subtracting a second sparse matrix
             # that contains only the upper matrix that wants to be removed.
-            self.matrix = triu(self.matrix, k=0, format='csr') - \
-                triu(self.matrix, k=max_depth_in_bins, format='csr')
+            if not pSkipTriu:
+                self.matrix = triu(self.matrix, k=0, format='csr') - \
+                    triu(self.matrix, k=max_depth_in_bins, format='csr')
         else:
-            self.matrix = triu(self.matrix, k=0, format='csr')
+            if not pSkipTriu:
+                self.matrix = triu(self.matrix, k=0, format='csr')
 
         self.matrix.eliminate_zeros()
         depth = None
