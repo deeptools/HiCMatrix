@@ -11,9 +11,7 @@ class Hicpro(MatrixFile, object):
 
     def __init__(self, pMatrixFile, pBedFile):
         super().__init__(pMatrixFileName=pMatrixFile, pBedFile=pBedFile)
-        log.debug('pBedFile: {}'.format(pBedFile))
 
-        log.debug('self.befile: {}'.format(self.bedFile))
     def load(self):
         instances = []
         features = []
@@ -46,9 +44,8 @@ class Hicpro(MatrixFile, object):
 
         with open(pFilename, 'w') as matrix_file:
             for x, y, value in zip(instances, features, data):
-                matrix_file.write(str(int(x+1)) + '\t' + str(int(y+1)) + '\t' + str(value) + '\n')
-            
+                matrix_file.write(str(int(x + 1)) + '\t' + str(int(y + 1)) + '\t' + str(value) + '\n')
+
         with open(self.bedFile, 'w') as bed_file:
             for i, interval in enumerate(self.cut_intervals):
-                bed_file.write('\t'.join(map(str, interval[:3])) + '\t' + str(i+1)+'\n')
-        
+                bed_file.write('\t'.join(map(str, interval[:3])) + '\t' + str(i + 1) + '\n')

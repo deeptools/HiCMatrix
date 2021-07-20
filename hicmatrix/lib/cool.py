@@ -53,11 +53,12 @@ class Cool(MatrixFile, object):
             log.warning('No matrix is initialized')
         try:
             cooler_file = cooler.Cooler(self.matrixFileName)
-            if 'metadata' in cooler_file.info:
-                self.hic_metadata = cooler_file.info['metadata']
-            else:
-                self.hic_metadata = None
-            self.cool_info = deepcopy(cooler_file.info)
+            # if 'metadata' in cooler_file.info:
+            self.hic_metadata = cooler_file.info
+            # else:
+            #     self.hic_metadata = None
+            # self.cool_info = deepcopy(cooler_file.info)
+            # log.debug('self.hic_metadata {}'.format(self.hic_metadata))
         except Exception as e:
             log.warning("Could not open cooler file. Maybe the path is wrong or the given node is not available.")
             log.warning('The following file was tried to open: {}'.format(self.matrixFileName))
@@ -256,10 +257,13 @@ class Cool(MatrixFile, object):
             nan_bins = None
 
         distance_counts = None
+        # log.debug('self.hic_metadata {}'.format(self.hic_metadata))
 
         return matrix, cut_intervals, nan_bins, distance_counts, correction_factors
 
     def create_cooler_input(self, pSymmetric=True, pApplyCorrection=True):
+        log.debug('self.hic_metadata 34{}'.format(self.hic_metadata))
+
         self.matrix.eliminate_zeros()
 
         if self.nan_bins is not None and len(self.nan_bins) > 0 and self.fileWasH5:
@@ -296,6 +300,7 @@ class Cool(MatrixFile, object):
         # instead of handling this before.
         bins_data_frame = pd.DataFrame(self.cut_intervals, columns=['chrom', 'start', 'end', 'interactions']).drop('interactions', axis=1)
         dtype_pixel = {'bin1_id': np.int32, 'bin2_id': np.int32, 'count': np.int32}
+        log.debug('foo')
         if self.correction_factors is not None and pApplyCorrection:
             dtype_pixel['weight'] = np.float32
 
@@ -313,6 +318,7 @@ class Cool(MatrixFile, object):
                 self.correctionOperator = '*'
                 log.debug('inverted correction factors')
             weight = convertNansToOnes(np.array(self.correction_factors).flatten())
+            log.debug('weight {}'.format(weight))
             bins_data_frame = bins_data_frame.assign(weight=weight)
 
             log.debug("Reverting correction factors on matrix...")
@@ -340,7 +346,7 @@ class Cool(MatrixFile, object):
             dtype_pixel['weight'] = np.float32
             weight = convertNansToOnes(np.array(self.correction_factors).flatten())
             bins_data_frame = bins_data_frame.assign(weight=weight)
-
+            log.debug('weight 2: {}'.format(weight))
         instances, features = self.matrix.nonzero()
 
         matrix_data_frame = pd.DataFrame(instances, columns=['bin1_id'], dtype=np.int32)
@@ -386,19 +392,13 @@ class Cool(MatrixFile, object):
 
         info['tool-url'] = str('https://github.com/deeptools/HiCMatrix')
 
-        # info['nchroms'] = int(bins_data_frame['chrom'][:].nunique())
-        # info['chromosomes'] = list(bins_data_frame['chrom'][:].unique())
-        # info['nnz'] = np.string_(str(self.matrix.nnz * 2))
-        # info['min-value'] = np.string_(str(matrix_data_frame['count'].min()))
-        # info['max-value'] = np.string_(str(matrix_data_frame['count'].max()))
-        # info['sum-elements'] = int(matrix_data_frame['count'].sum())
-
         if self.hic_metadata is not None and 'matrix-generated-by' in self.hic_metadata:
             info['matrix-generated-by'] = str(self.hic_metadata['matrix-generated-by'])
             del self.hic_metadata['matrix-generated-by']
         if self.hic_metadata is not None and 'matrix-generated-by-url' in self.hic_metadata:
             info['matrix-generated-by-url'] = str(self.hic_metadata['matrix-generated-by-url'])
             del self.hic_metadata['matrix-generated-by-url']
+        log.debug('self.hic_metadata {}'.format(self.hic_metadata))
         if self.hic_metadata is not None and 'genome-assembly' in self.hic_metadata:
             info['genome-assembly'] = str(self.hic_metadata['genome-assembly'])
             del self.hic_metadata['genome-assembly']
@@ -406,7 +406,7 @@ class Cool(MatrixFile, object):
         return bins_data_frame, matrix_data_frame, dtype_pixel, info
 
     def save(self, pFileName, pSymmetric=True, pApplyCorrection=True):
-        log.debug('Save in cool format')
+        log.debug('Save in cool format11112323')
 
         bins_data_frame, matrix_data_frame, dtype_pixel, info = self.create_cooler_input(pSymmetric=pSymmetric, pApplyCorrection=pApplyCorrection)
         local_temp_dir = os.path.dirname(os.path.realpath(pFileName))
@@ -416,9 +416,11 @@ class Cool(MatrixFile, object):
                              mode=self.appendData,
                              dtypes=dtype_pixel,
                              ordered=True,
-                             metadata=self.hic_metadata,
+                             metadata=info,
+
                              temp_dir=local_temp_dir)
 
+        log.debug('info {}'.format(info))
         if self.appendData == 'w':
             fileName = pFileName.split('::')[0]
             with h5py.File(fileName, 'r+') as h5file:
