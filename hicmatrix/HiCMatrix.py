@@ -13,6 +13,7 @@ import tables
 from intervaltree import IntervalTree, Interval
 import cooler
 import time
+from collections import Counter
 
 from .utilities import toBytes
 from .utilities import toString
