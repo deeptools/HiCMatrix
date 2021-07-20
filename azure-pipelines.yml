@@ -34,10 +34,6 @@ jobs:
     displayName: installing dependencies
   - script: |
       source activate hicmatrix
-      flake8 . --exclude=.venv,.build,planemo_test_env,build --ignore=E501,F401,F403,E402,F999,F405,E712,W504
-    displayName: linting
-  - script: |
-      source activate hicmatrix
       flake8 . --exclude=.venv,.build,planemo_test_env,build --ignore=E501,F401,F403,E402,F999,F405,E712
     displayName: linting
   - script: |
