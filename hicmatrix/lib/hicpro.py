@@ -36,3 +36,16 @@ class Hicpro(MatrixFile, object):
         distance_counts = None
         correction_factors = None
         return matrix, cut_intervals, nan_bins, distance_counts, correction_factors
+
+    def save(self, pFilename, pSymmetric=None, pApplyCorrection=None):
+        self.matrix.eliminate_zeros()
+        instances, features = self.matrix.nonzero()
+        data = self.matrix.data
+
+        with open(pFilename, 'w') as matrix_file:
+            for x, y, value in zip(instances, features, data):
+                matrix_file.write(str(int(x + 1)) + '\t' + str(int(y + 1)) + '\t' + str(value) + '\n')
+
+        with open(self.bedFile, 'w') as bed_file:
+            for i, interval in enumerate(self.cut_intervals):
+                bed_file.write('\t'.join(map(str, interval[:3])) + '\t' + str(i + 1) + '\n')

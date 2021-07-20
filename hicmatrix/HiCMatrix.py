@@ -13,6 +13,7 @@ import tables
 from intervaltree import IntervalTree, Interval
 import cooler
 import time
+from collections import Counter
 
 from .utilities import toBytes
 from .utilities import toString
@@ -169,7 +170,7 @@ class hiCMatrix:
                 return self.bin_size
             # If there are more bins, the diff will be compared
             # to the median of the differences between starts
-            median = int(np.median(np.diff(start)))
+            median = int(np.median(np.concatenate([np.diff([start for chro, start, end, extra in self.cut_intervals if chro == cur_chrom]) for cur_chrom, nb in Counter(chrom).items() if nb > 1])))
 
             # check if the bin size is
             # homogeneous
@@ -334,7 +335,7 @@ class hiCMatrix:
             return cut_intervals
         chrom, start, end, extra = zip(*cut_intervals)
 
-        median = int(np.median(np.diff(start)))
+        median = int(np.median(np.concatenate([np.diff([start for chro, start, end, extra in cut_intervals if chro == cur_chrom]) for cur_chrom, nb in Counter(chrom).items() if nb > 1])))
         diff = np.array(end) - np.array(start)
         # check if the bin size is homogeneous
         if len(np.flatnonzero(diff != median)) > (len(diff) * 0.01):
@@ -354,7 +355,7 @@ class hiCMatrix:
     def convert_to_zscore_matrix(self, maxdepth=None, perchr=False):
         return self.convert_to_obs_exp_matrix(maxdepth=maxdepth, zscore=True, perchr=perchr)
 
-    def convert_to_obs_exp_matrix(self, maxdepth=None, zscore=False, perchr=False):
+    def convert_to_obs_exp_matrix(self, maxdepth=None, zscore=False, perchr=False, pSkipTriu=False):
         """
         Converts a corrected counts matrix into a
         obs / expected matrix or z-scores fast.
@@ -395,10 +396,12 @@ class hiCMatrix:
             # max_depth_in_bis
             # (this is done by subtracting a second sparse matrix
             # that contains only the upper matrix that wants to be removed.
-            self.matrix = triu(self.matrix, k=0, format='csr') - \
-                triu(self.matrix, k=max_depth_in_bins, format='csr')
+            if not pSkipTriu:
+                self.matrix = triu(self.matrix, k=0, format='csr') - \
+                    triu(self.matrix, k=max_depth_in_bins, format='csr')
         else:
-            self.matrix = triu(self.matrix, k=0, format='csr')
+            if not pSkipTriu:
+                self.matrix = triu(self.matrix, k=0, format='csr')
 
         self.matrix.eliminate_zeros()
         depth = None
