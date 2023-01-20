@@ -628,7 +628,7 @@ class hiCMatrix:
         size = self.matrix.shape
         # initialize a 1D array containing the columns (and rows) to
         # select. By default none are selected
-        sel = np.empty(size[0], dtype=np.bool)
+        sel = np.empty(size[0], dtype=bool)
         sel[:] = False
 
         for chrName in list(self.interval_trees):

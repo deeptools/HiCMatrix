@@ -94,13 +94,13 @@ class Cool(MatrixFile, object):
                 del _features
 
             if self.matrixFormat is None or self.matrixFormat == 'csr':
-                matrix = csr_matrix((data, (instances, features)), shape=(np.int(cooler_file.info['nbins']), np.int(cooler_file.info['nbins'])), dtype=count_dtype)
+                matrix = csr_matrix((data, (instances, features)), shape=(int(cooler_file.info['nbins']), int(cooler_file.info['nbins'])), dtype=count_dtype)
             elif self.matrixFormat == 'lil':
-                matrix = lil_matrix((data, (instances, features)), shape=(np.int(cooler_file.info['nbins']), np.int(cooler_file.info['nbins'])), dtype=count_dtype)
+                matrix = lil_matrix((data, (instances, features)), shape=(int(cooler_file.info['nbins']), int(cooler_file.info['nbins'])), dtype=count_dtype)
             elif self.matrixFormat == 'dok':
-                matrix = dok_matrix((data, (instances, features)), shape=(np.int(cooler_file.info['nbins']), np.int(cooler_file.info['nbins'])), dtype=count_dtype)
+                matrix = dok_matrix((data, (instances, features)), shape=(int(cooler_file.info['nbins']), int(cooler_file.info['nbins'])), dtype=count_dtype)
             # elif  self.matrixFormat == 'raw':
-            #     matrix = [instances, features, data, np.int(cooler_file.info['nbins'])]
+            #     matrix = [instances, features, data, int(cooler_file.info['nbins'])]
             del data
             del instances
             del features
@@ -116,7 +116,7 @@ class Cool(MatrixFile, object):
             data = matrixDataFrameChunk['count'].values.astype(count_dtype)
             instances = matrixDataFrameChunk['bin1_id'].values.astype(used_dtype)
             features = matrixDataFrameChunk['bin2_id'].values.astype(used_dtype)
-            # matrix = [_instances, _features, _data, np.int(cooler_file.info['nbins'])]
+            # matrix = [_instances, _features, _data, int(cooler_file.info['nbins'])]
             # return matrix, None, None, None, None
         else:
             if len(self.chrnameList) == 1:
@@ -219,7 +219,7 @@ class Cool(MatrixFile, object):
                             log.debug('div')
                             data /= instances_factors
                         log.debug('non')
-                        return [instances, features, data, np.int(cooler_file.info['nbins'])], None, None, None, None
+                        return [instances, features, data, int(cooler_file.info['nbins'])], None, None, None, None
                     else:
                         if self.correctionOperator == '*':
                             matrix.data *= instances_factors
@@ -229,7 +229,7 @@ class Cool(MatrixFile, object):
                             log.debug('hu')
 
         elif self.matrixOnly:
-            return [instances, features, data, np.int(cooler_file.info['nbins'])], None, None, None, None
+            return [instances, features, data, int(cooler_file.info['nbins'])], None, None, None, None
 
         cut_intervals = []
         if not self.noCutIntervals:

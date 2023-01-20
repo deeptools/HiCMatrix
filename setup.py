@@ -93,7 +93,7 @@ class install(_install):
             sys.stderr.write("Error: {}".format(e))
 
 
-install_requires_py = ["numpy >= 1.16.*",
+install_requires_py = ["numpy >= 1.20",
                        "scipy >= 1.2.*",
                        "tables >= 3.5.*",
                        "pandas >= 0.25.*",

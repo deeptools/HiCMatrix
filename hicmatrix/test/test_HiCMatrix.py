@@ -561,7 +561,7 @@ def test_reorderChromosomes_fail():
     false_chr_order = ['a', 'b', 'c']
     with pytest.raises(Exception) as context:
         hic.reorderChromosomes(false_chr_order)
-    assert("Chromosome name 'c' not found." in str(context.value))
+    assert "Chromosome name 'c' not found." in str(context.value)
 
 
 def test_reorderBins():
