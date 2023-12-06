@@ -1,0 +1,52 @@
+name: Test
+on: [push, pull_request]
+
+defaults:
+  run:
+    shell: bash -l {0}
+
+jobs:
+  test-linux:
+    name: Test on Linux
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          - "3.8"
+          - "3.9"
+          - "3.10"
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use python ${{ matrix.python-version }}
+      run: echo "   - python = ${{ matrix.python-version }}" >> ./HiCMatrix_env_ci.yml
+    - uses: mamba-org/setup-micromamba@main
+      with:
+        environment-file: ./HiCMatrix_env_ci.yml
+        cache-downloads: true
+        environment-name: HiCMatrix_env_ci
+    - name: pip install
+      run: |
+        micromamba activate HiCMatrix_env_ci
+        python3 -m pip install .
+    - name: Test HiCMatrix
+      run: |
+        micromamba activate HiCMatrix_env_ci
+        py.test hicmatrix/test/ --capture=sys
+  test-osx:
+    name: Test on OSX
+    runs-on: macOS-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: mamba-org/setup-micromamba@main
+      with:
+        environment-file: ./HiCMatrix_env_ci.yml
+        cache-downloads: true
+        environment-name: HiCMatrix_env_ci
+    - name: pip install
+      run: |
+        micromamba activate HiCMatrix_env_ci
+        python3 -m pip install .
+    - name: Test HiCMatrix
+      run: |
+        micromamba activate HiCMatrix_env_ci
+        py.test hicmatrix/test/ --capture=sys

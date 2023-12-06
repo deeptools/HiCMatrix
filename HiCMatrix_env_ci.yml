@@ -1,0 +1,20 @@
+name: HiCMatrix_env_ci
+channels:
+   - conda-forge
+   - bioconda
+dependencies:
+   - numpy >= 1.20
+   - scipy >= 1.2
+   - pandas >= 0.25
+   - pytables >= 3.5
+   - cooler >= 0.8.9
+   - intervaltree >= 3.0
+   - pytest
+   - flake8
+   - pytest-xdist
+   - pytest-forked
+   - nose
+   - pathlib
+   - configparser
+   - build # For the upload
+   - twine # For the upload

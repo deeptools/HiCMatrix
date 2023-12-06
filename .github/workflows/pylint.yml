@@ -1,0 +1,34 @@
+name: Pylint
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: mamba-org/setup-micromamba@main
+      with:
+        environment-file: ./HiCMatrix_env_ci.yml
+        cache-downloads: true
+        environment-name: HiCMatrix_env_ci
+    - name: Analysing the code with pylint
+      run: |
+        micromamba activate HiCMatrix_env_ci
+        # Disable
+        # C0103: Invalid name
+        # C0114: Missing module docstring
+        # C0115: Missing class docstring
+        # C0116: Missing function or method docstring
+        # C0301: Line too long
+        # C0302: Too many lines in module
+        # R0801: Similar lines
+        # R0902: Too many instance attributes
+        # R0904: Too many public methods
+        # R0912: Too many branches
+        # R0913: Too many arguments
+        # R0914: Too many local variables
+        # R0915: Too many statements
+        # R1702: Too many nested blocks
+        # R1728: Consider using a generator
+        pylint --disable C0103,C0114,C0115,C0116,C0301,C0302,R0801,R0902,R0904,R0912,R0913,R0914,R0915,R1702,R1728 $(git ls-files '*.py')
