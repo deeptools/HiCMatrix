@@ -3,9 +3,6 @@ import sys
 import warnings
 from collections import OrderedDict
 
-log = logging.getLogger(__name__)
-
-
 import time
 from collections import Counter
 
@@ -21,6 +18,7 @@ from scipy.sparse import vstack as sparse_vstack
 from .lib import MatrixFileHandler
 from .utilities import check_chrom_str_bytes, toBytes, toString
 
+log = logging.getLogger(__name__)
 
 class hiCMatrix:
     """
