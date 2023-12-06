@@ -1,19 +1,18 @@
 import logging
-import sys
-import warnings
+from collections import Counter
 from collections import OrderedDict
 
 import time
-from collections import Counter
 
 import cooler
 import numpy as np
-import tables
 from intervaltree import Interval, IntervalTree
 from scipy.sparse import csr_matrix, dia_matrix
 from scipy.sparse import hstack as sparse_hstack
 from scipy.sparse import tril, triu
 from scipy.sparse import vstack as sparse_vstack
+from scipy.sparse import diags
+from scipy.sparse import lil_matrix
 
 from .lib import MatrixFileHandler
 from .utilities import check_chrom_str_bytes, toBytes, toString
@@ -51,15 +50,14 @@ class hiCMatrix:
             if pMatrixFile.endswith('.h5'):
                 fileType = 'h5'
             self.matrixFileHandler = MatrixFileHandler(pFileType=fileType, pMatrixFile=pMatrixFile, pChrnameList=pChrnameList, pDistance=pDistance, pMatrixFormat=pMatrixFormat, pLoadMatrixOnly=pLoadMatrixOnly)
-            log.debug('init time: {}'.format(time.time() - start_time))
+            log.debug('init time: %s', time.time() - start_time)
             matrixFileHandler_load = self.matrixFileHandler.load()
             # check if there was any exception thrown in the load function
             if len(matrixFileHandler_load) == 2:
-                raise Exception('Matrix failed to load: {}'.format(str(matrixFileHandler_load[1])))
-            else:
-                self.matrix, self.cut_intervals, self.nan_bins, \
-                    self.correction_factors, self.distance_counts = matrixFileHandler_load
-            if pLoadMatrixOnly is None or pLoadMatrixOnly == False:
+                raise ValueError(f'Matrix failed to load: {matrixFileHandler_load[1]}')
+            self.matrix, self.cut_intervals, self.nan_bins, \
+                self.correction_factors, self.distance_counts = matrixFileHandler_load
+            if pLoadMatrixOnly is None or not pLoadMatrixOnly:
                 if self.nan_bins is None:
                     self.nan_bins = np.array([])
 
@@ -67,7 +65,7 @@ class hiCMatrix:
                     self.fillLowerTriangle()
                 start_time = time.time()
 
-                if pRestoreMaskedBins is None or pRestoreMaskedBins == True:
+                if pRestoreMaskedBins is None or pRestoreMaskedBins:
                     self.restoreMaskedBins()
                 start_time = time.time()
 
@@ -80,7 +78,7 @@ class hiCMatrix:
         elif pMatrixFile is None:
             log.debug('Only init object, no matrix given.')
         else:
-            raise Exception('matrix file not given')
+            raise ValueError('matrix file not given')
         log.debug('data loaded!')
 
     def save(self, pMatrixName, pSymmetric=True, pApplyCorrection=False, pHiCInfo=None):
@@ -103,7 +101,7 @@ class hiCMatrix:
             self.matrixFileHandler.save(pMatrixName, pSymmetric=pSymmetric, pApplyCorrection=pApplyCorrection)
 
     def getInformationCoolerBinNames(self):
-        log.info('The following columns are available: {}'.format(self.matrixFileHandler.matrixFile.getInformationCoolerBinNames()))
+        log.info('The following columns are available: %s', self.matrixFileHandler.matrixFile.getInformationCoolerBinNames())
 
     def fillLowerTriangle(self):
         """
@@ -127,8 +125,8 @@ class hiCMatrix:
 
         # check that the matrix is squared
         if len(cut_intervals) != self.matrix.shape[0]:
-            raise Exception("Length of cut_intervals {} does not match the "
-                            "matrix size {}".format(len(cut_intervals), self.matrix.shape))
+            raise ValueError(f"Length of cut_intervals {len(cut_intervals)} does not match the "
+                             f"matrix size {self.matrix.shape}")
 
         self.cut_intervals = cut_intervals
         self.interval_trees, self.chrBinBoundaries = \
@@ -143,10 +141,9 @@ class hiCMatrix:
 
         # check that the matrix is squared
         if matrix.shape[0] != matrix.shape[1]:
-            raise Exception("Matrix is not squared. Shape is {}".format(matrix.shape))
+            raise ValueError(f"Matrix is not squared. Shape is {matrix.shape}")
         if len(cut_intervals) != matrix.shape[0]:
-            raise Exception("Length of cut_intervals {} does not match the matrix size {}".format(len(cut_intervals),
-                                                                                                  matrix.shape))
+            raise ValueError(f"Length of cut_intervals {len(cut_intervals)} does not match the matrix size {matrix.shape}")
 
         self.matrix = matrix
         self.cut_intervals = cut_intervals
@@ -177,7 +174,7 @@ class hiCMatrix:
                 self.bin_size_homogeneous = False
                 if self.non_homogeneous_warning_already_printed is False:
                     log.warning('Bin size is not homogeneous. \
-                                      Median {}\n'.format(median))
+                                      Median %f\n', median)
                     self.non_homogeneous_warning_already_printed = True
             self.bin_size = median
         return self.bin_size
@@ -204,11 +201,8 @@ class hiCMatrix:
 
         if chrName in self.chrBinBoundaries:
             return self.chrBinBoundaries[chrName]
-        else:
-            raise Exception("chrName: {} not found in chrBinBoundaries"
-                            "valid chromosomes are: {}"
-                            .format(chrName, self.chrBinBoundaries.keys()))
-            return None, None
+        raise ValueError(f"chrName: {chrName} not found in chrBinBoundaries"
+                        f"valid chromosomes are: {self.chrBinBoundaries.keys()}")
 
     def getChrNames(self):
         """
@@ -224,9 +218,7 @@ class hiCMatrix:
         """
         if binIndex < len(self.cut_intervals):
             return self.cut_intervals[binIndex]
-        else:
-            raise Exception("binIndex: {} not found".format(binIndex))
-            return None
+        raise ValueError(f"binIndex: {binIndex} not found")
 
     def getRegionBinRange(self, chrname, startpos, endpos):
         """
@@ -237,21 +229,21 @@ class hiCMatrix:
         try:
             # chromosome_size = hic_matrix.get_chromosome_sizes()
             # chrname = check_chrom_str_bytes(self.interval_trees, chrname)
-            if type(next(iter(self.interval_trees))) != type(chrname):
-                if type(next(iter(self.interval_trees))) is str:
+            if not isinstance(next(iter(self.interval_trees)), type(chrname)):
+                if isinstance(next(iter(self.interval_trees)), str):
                     chrname = toString(chrname)
-                elif type(next(iter(self.interval_trees))) is bytes:
+                elif isinstance(next(iter(self.interval_trees)), bytes):
                     chrname = toBytes(chrname)
-                elif type(next(iter(self.interval_trees))) is np.bytes_:
+                elif isinstance(next(iter(self.interval_trees)), np.bytes_):
                     chrname = toBytes(chrname)
             # chr_end_pos = chromosome_size[chrname]
             # self.interval_trees[chrname]
             if chrname not in self.interval_trees:
-                raise Exception("chromosome: {} name not found in matrix"
-                                "valid names are: {}"
-                                .format(chrname, self.interval_trees.keys()))
+                raise ValueError(f"chromosome: {chrname} name not found in matrix"
+                                 f"valid names are: {self.interval_trees.keys()}"
+                                )
         except KeyError as ke:
-            log.exception("chromosome: {} name not found in matrix".format(chrname))
+            log.exception("chromosome: %s name not found in matrix", chrname)
             log.exception("valid names are: ")
             log.exception(self.interval_trees.keys())
             log.exception(str(ke))
@@ -260,8 +252,8 @@ class hiCMatrix:
             startpos = int(startpos)
             endpos = int(endpos)
         except ValueError as ve:
-            log.exception("{} or {}  are not valid "
-                          "position values.".format(startpos, endpos))
+            log.exception("%d or %d  are not valid "
+                          "position values.", startpos, endpos)
             log.exception(str(ve))
 
         try:
@@ -291,7 +283,7 @@ class hiCMatrix:
             A matching list containing the chromosome name
             is also returned
         """
-        chrnamelist, startlist, endlist, extralist = zip(*cut_intervals)
+        chrnamelist, startlist, _, _ = zip(*cut_intervals)
         # now the distance between any two points
         # is computed and arranged such that for each
         # element of the data array, a corespondent distance is stored
@@ -348,7 +340,7 @@ class hiCMatrix:
             cut_intervals = list(zip(chrom, start, end, extra))
             log.info('[getCountsByDistance] Bin size is not '
                      'homogeneous, setting \n'
-                     'the bin distance to the median: {}\n'.format(median))
+                     'the bin distance to the median: %f\n', median)
         return cut_intervals
 
     def convert_to_zscore_matrix(self, maxdepth=None, perchr=False):
@@ -387,7 +379,7 @@ class hiCMatrix:
 
         if maxdepth:
             if maxdepth < binsize:
-                raise Exception("Please specify a maxDepth larger than bin size ({})".format(binsize))
+                raise ValueError(f"Please specify a maxDepth larger than bin size ({binsize})")
 
             max_depth_in_bins = int(float(maxdepth * 1.5) / binsize)
             # work only with the upper matrix
@@ -405,7 +397,6 @@ class hiCMatrix:
         self.matrix.eliminate_zeros()
         depth = None
         if zscore is True:
-            from scipy.sparse import diags
             m_size = self.matrix.shape[0]
             if max_depth_in_bins is not None:
                 depth = max_depth_in_bins
@@ -414,8 +405,8 @@ class hiCMatrix:
                 estimated_size_dense_matrix = m_size ** 2 * 8
                 if estimated_size_dense_matrix > 100e6:
                     log.info("To compute z-scores a dense matrix is required. This will use \n"
-                             "{} Mb of memory.\n To reduce memory use the maxdeph option."
-                             "".format(estimated_size_dense_matrix / 1e6))
+                             "%f Mb of memory.\n To reduce memory use the maxdeph option."
+                             "", estimated_size_dense_matrix / 1e6)
 
             # to compute zscore the zero values need to be accounted and the matrix
             # need to become dense. This is only practical if only up to certain distance
@@ -431,7 +422,6 @@ class hiCMatrix:
 
             self.matrix += diag_mat_ones
 
-        from scipy.sparse import lil_matrix
         trasf_matrix = lil_matrix(self.matrix.shape)
 
         chr_submatrix = OrderedDict()
@@ -457,12 +447,12 @@ class hiCMatrix:
         # for chrname, submatrix in iteritems(chr_submatrix):
         for chrname, submatrix in chr_submatrix.items():
 
-            log.info("processing chromosome {}\n".format(chrname))
+            log.info("processing chromosome %s\n", chrname)
             if zscore is True:
                 # this step has to be done after tocoo()
                 submatrix.data -= 1
 
-            dist_list, chrom_list = self.getDistList(submatrix.row, submatrix.col,
+            dist_list, _ = self.getDistList(submatrix.row, submatrix.col,
                                                      hiCMatrix.fit_cut_intervals(cut_intervals[chrname]))
 
             # to get the sum of all values at a given distance I use np.bincount which
@@ -474,7 +464,7 @@ class hiCMatrix:
             # Because positive integers are needed we add +1 to all bin distances
             # such that the value of -1 (which means different chromosomes) can now be used
 
-            dist_list[dist_list == -1] = -binsize
+            dist_list[dist_list == -1] = -binsize  # pylint: disable=E1130
             # divide by binsize to get a list of bin distances and add +1 to remove negative values
             dist_list = (np.array(dist_list).astype(float) / binsize).astype(int) + 1
 
@@ -518,7 +508,7 @@ class hiCMatrix:
                     # idx - 1 because earlier the values where
                     # shifted.
                     diagonal_length = sum([size - (bin_dist_plus_one - 1) for size in chrom_sizes[chrname] if size > (bin_dist_plus_one - 1)])
-                    log.debug("Type of diagonal_length {}".format(type(diagonal_length)))
+                    log.debug("Type of diagonal_length %s", type(diagonal_length))
 
                 # the diagonal length should contain the number of values at a certain distance.
                 # If the matrix is dense, the distance_len[bin_dist_plus_one] correctly contains the number of values
@@ -526,7 +516,7 @@ class hiCMatrix:
                 # But, if the matrix is both sparse and with unequal bins, then none of the above methods is
                 # accurate but the the diagonal_length as computed before will be closer.
                 diagonal_length = max(diagonal_length, distance_len[bin_dist_plus_one])
-                log.debug("Type of diagonal_length {}".format(type(diagonal_length)))
+                log.debug("Type of diagonal_length %s", type(diagonal_length))
 
                 if diagonal_length == 0:
                     mu[bin_dist_plus_one] = np.nan
@@ -534,7 +524,7 @@ class hiCMatrix:
                     mu[bin_dist_plus_one] = np.float64(sum_value) / diagonal_length
 
                 if np.isnan(sum_value):
-                    log.info("nan value found for distance {}\n".format((bin_dist_plus_one - 1) * binsize))
+                    log.info("nan value found for distance %f\n", (bin_dist_plus_one - 1) * binsize)
 
                 # if zscore is needed, compute standard deviation: std = sqrt(mean(abs(x - x.mean())**2))
                 if zscore:
@@ -605,8 +595,8 @@ class hiCMatrix:
         # convert to dictionary having as key
         # the distance
         distance = {}
-        for index in range(len(distance_unique)):
-            distance[distance_unique[index]] = groups[index]
+        for index, d in enumerate(distance_unique):
+            distance[d] = groups[index]
 
         return distance
 
@@ -621,7 +611,7 @@ class hiCMatrix:
         try:
             [self.chrBinBoundaries[x] for x in chromosome_list]
         except KeyError as e:
-            raise Exception("Chromosome name {} not in matrix.".format(e))
+            raise ValueError(f"Chromosome name not in matrix. {str(e)}") from e
 
         self.restoreMaskedBins()
         size = self.matrix.shape
@@ -659,7 +649,7 @@ class hiCMatrix:
         else:
             self.nan_bins = []
 
-        self.numCols = len(sel_id)
+        self.numCols = len(sel_id)  # pylint: disable=W0201
 
         self.interval_trees, self.chrBinBoundaries = \
             self.intervalListToIntervalTree(self.cut_intervals)
@@ -724,8 +714,8 @@ class hiCMatrix:
         for chrName in new_chr_order:
             # check that the chromosome names are valid
             if chrName not in self.chrBinBoundaries:
-                raise Exception("Chromosome name '{}' not found. Please check the correct spelling "
-                                "of the chromosomes and try again".format(chrName))
+                raise ValueError(f"Chromosome name '{chrName}' not found. Please check the correct spelling "
+                                 "of the chromosomes and try again")
             orig = self.chrBinBoundaries[chrName]
             new_order.extend(list(range(orig[0], orig[1])))
         self.reorderBins(new_order)
@@ -762,8 +752,8 @@ class hiCMatrix:
         for chromosome in pChromosomeList:
             # check that the chromosome names are valid
             if chromosome not in self.chrBinBoundaries:
-                raise Exception("Chromosome name '{}' not found. Please check the correct spelling "
-                                "of the chromosomes and try again".format(chromosome))
+                raise ValueError(f"Chromosome name '{chromosome}' not found. Please check the correct spelling "
+                                 "of the chromosomes and try again")
             orig = self.chrBinBoundaries[chromosome]
             mask_ids.extend(list(range(orig[0], orig[1])))
         self.maskBins(mask_ids)
@@ -789,13 +779,13 @@ class hiCMatrix:
                 bin_ids = np.unique(np.concatenate([previous_bin_ids, self.orig_bin_ids[bin_ids]]))
                 np.sort(bin_ids)
                 self.restoreMaskedBins()
-        except Exception:
+        except Exception:  # pylint: disable=W0718
             pass
 
         # join with existing nan_bins
         if self.nan_bins is not None and len(self.nan_bins) > 0:
-            log.info("found existing {} nan bins that will be "
-                     "included for masking ".format(len(self.nan_bins)))
+            log.info("found existing %d nan bins that will be "
+                     "included for masking ", len(self.nan_bins))
             bin_ids = np.unique(np.concatenate([self.nan_bins, bin_ids]))
             self.nan_bins = []
         rows = cols = np.delete(list(range(self.matrix.shape[1])), bin_ids)
@@ -830,7 +820,7 @@ class hiCMatrix:
         :return:
         """
         if len(self.orig_bin_ids) > 0:
-            raise Exception("matrix contains masked bins. Restore masked bins first")
+            raise ValueError("matrix contains masked bins. Restore masked bins first")
 
         assert len(new_cut_intervals) == new_matrix.shape[0], "matrix shape and len of cut intervals do not match"
 
@@ -908,7 +898,6 @@ class hiCMatrix:
 
         if self.correction_factors is not None:
             self.correction_factors = self.correction_factors[rows]
-        return
 
     def truncTrans(self, high=0.05):
         """Truncates trans contacts to remove blowouts
@@ -924,7 +913,8 @@ class hiCMatrix:
         if np.count_nonzero(dist_list == -1) == 0:
             return
         max_inter = np.percentile(mat.data[dist_list == -1], (100 - high))
-        mat.data[(mat.data >= max_inter) & (dist_list == -1)] == max_inter
+        # This needs to be fixed I guess Joachim wanted to put '=' instead of '=='
+        mat.data[(mat.data >= max_inter) & (dist_list == -1)] == max_inter  # pylint: disable=W0104
 
         self.setMatrixValues(mat)
 
@@ -936,9 +926,9 @@ class hiCMatrix:
         cnt = {}
         try:
             self.prev_to_remove
-        except Exception:
+        except Exception:  # pylint: disable=W0718
             log.debug("No self.prev_to_remove defined, defining it now.")
-            self.prev_to_remove = np.array([])
+            self.prev_to_remove = np.array([])  # pylint: disable=W0201
 
         # if the same information was already printed don't
         # show it again.
@@ -951,7 +941,7 @@ class hiCMatrix:
                 if len(self.orig_bin_ids) > 0:
                     log.info("Masked bins already present")
                     self.restoreMaskedBins()
-            except Exception:
+            except Exception:  # pylint: disable=W0718
                 pass
         for idx in to_remove:
             chrom = self.cut_intervals[idx][0]
@@ -959,8 +949,8 @@ class hiCMatrix:
                 cnt[chrom] = 0
             cnt[chrom] += 1
 
-        log.info('{}: {} {}'.format(label, len(to_remove), cnt))
-        self.prev_to_remove = to_remove
+        log.info('%s: %d %s', label, len(to_remove), cnt)
+        self.prev_to_remove = to_remove  # pylint: disable=W0201
 
     def get_chromosome_sizes_real(self):
         '''
@@ -971,11 +961,12 @@ class hiCMatrix:
             chrom_sizes = OrderedDict()
             # for chrom, (start_bin, end_bin) in iteritems(self.chrBinBoundaries):
             for chrom, (start_bin, end_bin) in self.chrBinBoundaries.items():
-                chrom, start0, end0, _ = self.cut_intervals[start_bin]
-                chrom, start1, end1, _ = self.cut_intervals[end_bin - 1]
+                chrom, start0, _, _ = self.cut_intervals[start_bin]
+                chrom, _, end1, _ = self.cut_intervals[end_bin - 1]
                 chrom_sizes[chrom] = end1 - start0 + 1
 
             return chrom_sizes
+        return None
 
     def get_chromosome_sizes(self):
         '''
@@ -984,12 +975,13 @@ class hiCMatrix:
         if self.chrBinBoundaries and len(self.chrBinBoundaries) > 0:
             chrom_sizes = OrderedDict()
             # for chrom, (start_bin, end_bin) in iteritems(self.chrBinBoundaries):
-            for chrom, (start_bin, end_bin) in self.chrBinBoundaries.items():
+            for chrom, (_, end_bin) in self.chrBinBoundaries.items():
 
-                chrom, start, end, _ = self.cut_intervals[end_bin - 1]
+                chrom, _, end, _ = self.cut_intervals[end_bin - 1]
                 chrom_sizes[chrom] = end
 
             return chrom_sizes
+        return None
 
     def intervalListToIntervalTree(self, interval_list):
         """
@@ -1030,6 +1022,6 @@ class hiCMatrix:
 
 def check_cooler(pFileName):
     if pFileName.endswith('.cool') or '.mcool' in pFileName:
-        if cooler.io.is_cooler(pFileName):
+        if cooler.fileops.is_cooler(pFileName):
             return True
     return False

@@ -1,26 +1,14 @@
 import logging
 import os
 
-log = logging.getLogger(__name__)
-import gc
-import math
-import time
-from copy import deepcopy
-from datetime import datetime
-
 import cooler
-import h5py
 import numpy as np
-import pandas as pd
-from scipy.sparse import csr_matrix, dok_matrix, lil_matrix, triu
-
-from hicmatrix.utilities import (convertNansToOnes, convertNansToZeros,
-                                 toBytes, toString)
 
 from .matrixFile import MatrixFile
 
+log = logging.getLogger(__name__)
 
-class Scool(MatrixFile, object):
+class Scool(MatrixFile):
 
     def __init__(self, pMatrixFile=None):
         super().__init__(pMatrixFile)
@@ -32,7 +20,6 @@ class Scool(MatrixFile, object):
 
     def load(self):
         raise NotImplementedError('Please use the specific cell to load the individual cool file from the scool file')
-        exit(1)
 
     def save(self, pFileName, pSymmetric=True, pApplyCorrection=True):
 
@@ -41,7 +28,7 @@ class Scool(MatrixFile, object):
 
         if self.coolObjectsList is not None:
             for coolObject in self.coolObjectsList:
-                bins_data_frame, matrix_data_frame, dtype_pixel, info = coolObject.matrixFile.create_cooler_input(pSymmetric=pSymmetric, pApplyCorrection=pApplyCorrection)
+                bins_data_frame, matrix_data_frame, dtype_pixel, _ = coolObject.matrixFile.create_cooler_input(pSymmetric=pSymmetric, pApplyCorrection=pApplyCorrection)
                 bins_dict[coolObject.matrixFile.matrixFileName] = bins_data_frame
                 pixel_dict[coolObject.matrixFile.matrixFileName] = matrix_data_frame
 
@@ -53,9 +40,9 @@ class Scool(MatrixFile, object):
                 for i, pixels in enumerate(self.pixel_list):
                     bins_dict[self.name_list[i]] = self.bins
                     pixel_dict[self.name_list[i]] = pixels
-                    log.debug('self.name_list[i] {}'.format(self.name_list[i]))
-            except Exception as exp:
-                log.debug('Exception {}'.format(str(exp)))
+                    log.debug('self.name_list[i] %s', self.name_list[i])
+            except Exception as exp:  # pylint: disable=W0718
+                log.debug('Exception %s', str(exp))
 
         local_temp_dir = os.path.dirname(os.path.realpath(pFileName))
 

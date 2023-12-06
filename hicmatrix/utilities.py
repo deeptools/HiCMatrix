@@ -45,7 +45,7 @@ def check_chrom_str_bytes(pIteratableObj, pObj):
     else:
         type_ = type(pObj)
     if not isinstance(type(next(iter(pIteratableObj))), type_):
-        if type(next(iter(pIteratableObj))) is str:
+        if isinstance(next(iter(pIteratableObj)), str):
             pObj = toString(pObj)
         elif type(next(iter(pIteratableObj))) in [bytes, np.bytes_]:
             pObj = toBytes(pObj)
@@ -106,12 +106,12 @@ def opener(filename):
     """
     Determines if a file is compressed or not
     """
-    f = open(filename, 'rb')
+    f = open(filename, 'rb')  # pylint: disable=R1732
     # print("gzip or not?", f.read(2))
 
     if f.read(2) == b'\x1f\x8b':
         f.seek(0)
         return gzip.GzipFile(fileobj=f)
-    else:
-        f.seek(0)
-        return f
+
+    f.seek(0)
+    return f
