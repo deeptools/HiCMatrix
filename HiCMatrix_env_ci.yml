@@ -10,7 +10,7 @@ dependencies:
    - cooler >= 0.8.9
    - intervaltree >= 3.0
    - pytest
-   - flake8
+   - pylint
    - pytest-xdist
    - pytest-forked
    - nose
