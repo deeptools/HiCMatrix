@@ -18,7 +18,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Use python ${{ matrix.python-version }}
-      run: echo "   - python = ${{ matrix.python-version }}" >> ./HiCMatrix_env_ci.yml
+      run: echo -e "\n   - python = ${{ matrix.python-version }}" >> ./HiCMatrix_env_ci.yml
     - uses: mamba-org/setup-micromamba@main
       with:
         environment-file: ./HiCMatrix_env_ci.yml
@@ -35,8 +35,16 @@ jobs:
   test-osx:
     name: Test on OSX
     runs-on: macOS-latest
+    strategy:
+      matrix:
+        python-version:
+          - "3.8"
+          - "3.9"
+          - "3.10"
     steps:
     - uses: actions/checkout@v3
+    - name: Use python ${{ matrix.python-version }}
+      run: echo -e "\n   - python = ${{ matrix.python-version }}" >> ./HiCMatrix_env_ci.yml
     - uses: mamba-org/setup-micromamba@main
       with:
         environment-file: ./HiCMatrix_env_ci.yml
