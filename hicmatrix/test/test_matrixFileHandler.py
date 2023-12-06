@@ -1,17 +1,18 @@
-from hicmatrix.lib import MatrixFileHandler
-import numpy.testing as nt
-import os
-import pytest
-from scipy.sparse.csr import csr_matrix
-import numpy as np
-from copy import deepcopy
-from tempfile import NamedTemporaryFile
-import cooler
 import logging
+import os
+from tempfile import NamedTemporaryFile
+
+import cooler
+import numpy as np
+import numpy.testing as nt
+import pytest
+
+from hicmatrix.lib import MatrixFileHandler
+
 log = logging.getLogger(__name__)
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_data/")
-outfile = '/tmp/matrix'
+outfile_basename = '/tmp/matrix'
 
 
 def test_load_homer():
@@ -63,7 +64,7 @@ def test_load_homer_gzip():
 
 
 def test_save_homer():
-    homer_outfile = outfile + '.homer'
+    homer_outfile = outfile_basename + '.homer'
 
     # create matrixFileHandler instance with filetype 'homer'
     pMatrixFile = ROOT + 'test_matrix.homer'
@@ -79,7 +80,7 @@ def test_save_homer():
     os.unlink(homer_outfile)
 
 
-def test_load_h5(capsys):
+def test_load_h5():
     # create matrixFileHandler instance with filetype 'h5'
     pMatrixFile = ROOT + 'Li_et_al_2015.h5'
     fh = MatrixFileHandler(pFileType='h5', pMatrixFile=pMatrixFile)
@@ -106,7 +107,7 @@ def test_load_h5(capsys):
 
 
 def test_save_h5():
-    h5_outfile = outfile + '.h5'
+    h5_outfile = outfile_basename + '.h5'
 
     # create matrixFileHandler instance with filetype 'h5'
     pMatrixFile = ROOT + 'Li_et_al_2015.h5'
@@ -123,7 +124,7 @@ def test_save_h5():
     os.unlink(h5_outfile)
 
 
-def test_load_hicpro(capsys):
+def test_load_hicpro():
     # create matrixFileHandler instance with filetype 'hicpro'
     pMatrixFile = ROOT + 'test_matrix.hicpro'
     pBedFileHicPro = ROOT + 'test_matrix.bed'
@@ -161,7 +162,7 @@ def test_load_hicpro(capsys):
 
 @pytest.mark.xfail
 def test_save_hicpro():
-    hicpro_outfile = outfile + '.hicpro'
+    hicpro_outfile = outfile_basename + '.hicpro'
 
     # create matrixFileHandler instance with filetype 'hicpro'
     pMatrixFile = ROOT + 'test_matrix.hicpro'
@@ -178,7 +179,7 @@ def test_save_hicpro():
     os.unlink(hicpro_outfile)
 
 
-def test_load_cool(capsys):
+def test_load_cool():
     # create matrixFileHandler instance with filetype 'cool'
     pMatrixFile = ROOT + 'Li_et_al_2015.cool'
     fh = MatrixFileHandler(pFileType='cool', pMatrixFile=pMatrixFile)
@@ -211,7 +212,7 @@ def test_load_cool(capsys):
     assert distance_counts is None
 
 
-def test_load_cool2(capsys):
+def test_load_cool2():
     # create matrixFileHandler instance with filetype 'cool'
     pMatrixFile = ROOT + 'one_interaction_4chr.cool'
     # The interaction is:
@@ -253,7 +254,7 @@ def test_load_cool2(capsys):
 
 
 def test_save_cool():
-    cool_outfile = outfile + '.cool'
+    cool_outfile = outfile_basename + '.cool'
 
     # create matrixFileHandler instance with filetype 'cool'
     pMatrixFile = ROOT + 'Li_et_al_2015.cool'
@@ -281,7 +282,7 @@ def test_save_cool():
 
 
 def test_load_distance_cool():
-    cool_outfile = outfile + '.cool'
+    cool_outfile = outfile_basename + '.cool'
 
     # create matrixFileHandler instance with filetype 'cool'
     pMatrixFile = ROOT + 'GSE63525_GM12878_insitu_primary_2_5mb_hic2cool051.cool'
@@ -327,7 +328,7 @@ def test_load_distance_cool():
 
 
 def test_load_h5_save_cool():
-    cool_outfile = outfile + '.cool'
+    cool_outfile = outfile_basename + '.cool'
 
     # create matrixFileHandler instance with filetype 'h5'
     pMatrixFile = ROOT + 'Li_et_al_2015.h5'
@@ -372,7 +373,7 @@ def test_load_h5_save_cool():
 
 
 def test_save_cool_enforce_integer():
-    cool_outfile = outfile + '.cool'
+    cool_outfile = outfile_basename + '.cool'
 
     # create matrixFileHandler instance with filetype 'h5'
     pMatrixFile = ROOT + 'Li_et_al_2015.h5'
@@ -393,7 +394,7 @@ def test_save_cool_enforce_integer():
 
     fh_test = MatrixFileHandler(pFileType='cool', pMatrixFile=cool_outfile, pApplyCorrectionCoolerLoad=False)
     assert fh_test is not None
-    matrix_test, cut_intervals_test, nan_bins_test, distance_counts_test, correction_factors_test = fh_test.load()
+    matrix_test, cut_intervals_test, nan_bins_test, distance_counts_test, _ = fh_test.load()
 
     # pMatrixFile = ROOT + 'Li_et_al_2015.h5'
     # fh = MatrixFileHandler(pFileType='h5', pMatrixFile=pMatrixFile)
@@ -432,8 +433,8 @@ def test_load_cool_hic2cool_versions():
     # hic2cool_051 = hm.hiCMatrix(ROOT + 'GSE63525_GM12878_insitu_primary_2_5mb_hic2cool051.cool')
 
     # hic2cool_041 = hm.hiCMatrix(outfile.name)
-    matrix, cut_intervals, nan_bins, distance_counts, correction_factors = hic2cool_042.load()
-    matrix_test, cut_intervals_test, nan_bins_test, distance_counts_test, correction_factors_test = hic2cool_051.load()
+    matrix, cut_intervals, nan_bins, distance_counts, _ = hic2cool_042.load()
+    matrix_test, cut_intervals_test, nan_bins_test, distance_counts_test, _ = hic2cool_051.load()
 
     nt.assert_almost_equal(matrix.data, matrix_test.data, decimal=0)
     nt.assert_equal(len(cut_intervals), len(cut_intervals_test))
@@ -442,7 +443,7 @@ def test_load_cool_hic2cool_versions():
 
 
 def test_save_cool_apply_division():
-    cool_outfile = outfile + '.cool'
+    cool_outfile = outfile_basename + '.cool'
 
     # create matrixFileHandler instance with filetype 'cool'
     pMatrixFile = ROOT + 'Li_et_al_2015.cool'
@@ -462,7 +463,7 @@ def test_save_cool_apply_division():
 
     fh_test = MatrixFileHandler(pFileType='cool', pMatrixFile=cool_outfile)
     assert fh_test is not None
-    matrix_test, cut_intervals_test, nan_bins_test, distance_counts_test, correction_factors_test = fh_test.load()
+    matrix_test, cut_intervals_test, nan_bins_test, distance_counts_test, _ = fh_test.load()
     pMatrixFile = ROOT + 'Li_et_al_2015.cool'
     fh = MatrixFileHandler(pFileType='cool', pMatrixFile=pMatrixFile, pCorrectionOperator='/')
     assert fh is not None
@@ -479,7 +480,7 @@ def test_save_cool_apply_division():
 
 def test_save_scool_matrixHandlersCool():
 
-    outfile = NamedTemporaryFile(suffix='.scool', prefix='hicmatrix_scool_test')
+    outfile = NamedTemporaryFile(suffix='.scool', prefix='hicmatrix_scool_test')  # pylint: disable=R1732
 
     pMatrixFile = ROOT + 'GSE63525_GM12878_insitu_primary_2_5mb_hic2cool051.cool'
 
@@ -507,7 +508,7 @@ def test_save_scool_matrixHandlersCool():
 
 
 def test_save_scool_pixeltables():
-    outfile = NamedTemporaryFile(suffix='.scool', prefix='hicmatrix_scool_test')
+    outfile = NamedTemporaryFile(suffix='.scool', prefix='hicmatrix_scool_test')  # pylint: disable=R1732
 
     pMatrixFile = ROOT + 'GSE63525_GM12878_insitu_primary_2_5mb_hic2cool051.cool'
 
@@ -545,8 +546,8 @@ def test_load_cool_matrix_only():
     assert correction_factors is None
 
     matrixFileHandlerInput2 = MatrixFileHandler(pFileType='cool', pMatrixFile=pMatrixFile)
-    matrix2, cut_intervals2, nan_bins2, \
-        distance_counts2, correction_factors2 = matrixFileHandlerInput2.load()
+    matrix2, _, _, \
+        _, _ = matrixFileHandlerInput2.load()
 
     instances, features = matrix2.nonzero()
     nt.assert_almost_equal(matrix[0], instances, decimal=1)

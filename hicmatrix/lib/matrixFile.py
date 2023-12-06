@@ -1,4 +1,5 @@
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -6,7 +7,7 @@ class MatrixFile():
 
     def __init__(self, pMatrixFileName=None, pBedFile=None):
         self.matrixFileName = pMatrixFileName
-        log.debug('self.matrixFileName {}'.format(self.matrixFileName))
+        log.debug('self.matrixFileName %s', self.matrixFileName)
         self.matrix = None
         self.cut_intervals = None
         self.nan_bins = None
@@ -17,7 +18,7 @@ class MatrixFile():
     def load(self):
         log.error('Not implemented')
 
-    def save(self):
+    def save(self, pFileName, pSymmetric=True, pApplyCorrection=True):  # pylint: disable=W0613
         log.error('Not implemented')
 
     def is_of_type(self):

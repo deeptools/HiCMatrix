@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "HiCMatrix"
+version = "17.1"
+authors = [
+  { name = "Lucille Lopez-Delisle, Joachim Wolff, Leily Rabbani, Vivek Bhardwaj, Fidel Ramirez", email = "lucille.delisle@epfl.ch" },
+]
+description = "Helper package which implements HiCMatrix class for HiCExplorer, pyGenomeTracks and scHiCExplorer."
+readme = "README.rst"
+requires-python = ">=3.8"
+classifiers = [
+    'Intended Audience :: Science/Research',
+    'Topic :: Scientific/Engineering :: Bio-Informatics',
+]
+dependencies = [
+    "numpy >= 1.20",
+    "scipy >= 1.2",
+    "tables >= 3.5",
+    "pandas >= 0.25",
+    "cooler >= 0.8.9",
+    "intervaltree >= 3.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/deeptools/HiCMatrix"
+Issues = "https://github.com/deeptools/HiCMatrix/issues"

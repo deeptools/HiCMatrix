@@ -1,17 +1,19 @@
-from os import unlink
-import os
 import logging
-log = logging.getLogger(__name__)
+import os
+from os import unlink
 
+import numpy as np
 import tables
 from scipy.sparse import csr_matrix, triu
-import numpy as np
 
 from hicmatrix.utilities import toString
+
 from .matrixFile import MatrixFile
 
+log = logging.getLogger(__name__)
 
-class H5(MatrixFile, object):
+
+class H5(MatrixFile):
 
     def __init__(self, pMatrixFile):
         super().__init__(pMatrixFile)
@@ -29,9 +31,10 @@ class H5(MatrixFile, object):
             try:
                 for matrix_part in ('data', 'indices', 'indptr', 'shape'):
                     parts[matrix_part] = getattr(f.root.matrix, matrix_part).read()
-            except Exception as e:
+            except Exception as e:  # pylint: disable=W0718
                 log.info('No h5 file. Please check parameters concerning the file type!')
-                e
+                # Should probably be raise e:
+                e  # pylint: disable=W0104
             matrix = csr_matrix(tuple([parts['data'], parts['indices'], parts['indptr']]),
                                 shape=parts['shape'])
             # matrix = hiCMatrix.fillLowerTriangle(matrix)
@@ -46,8 +49,8 @@ class H5(MatrixFile, object):
 
             cut_intervals = list(zip(intvals['chr_list'], intvals['start_list'], intvals['end_list'], intvals['extra_list']))
             assert len(cut_intervals) == matrix.shape[0], \
-                "Error loading matrix. Length of bin intervals ({}) is different than the " \
-                "size of the matrix ({})".format(len(cut_intervals), matrix.shape[0])
+                f"Error loading matrix. Length of bin intervals ({len(cut_intervals)}) is different than the " \
+                f"size of the matrix ({matrix.shape[0]})"
 
             # get nan_bins
             try:
@@ -55,7 +58,7 @@ class H5(MatrixFile, object):
                     nan_bins = f.root.nan_bins.read()
                 else:
                     nan_bins = np.array([])
-            except Exception:
+            except Exception:  # pylint: disable=W0718
                 nan_bins = np.array([])
 
             # get correction factors
@@ -72,7 +75,7 @@ class H5(MatrixFile, object):
                     correction_factors[mask] = 0
                 else:
                     correction_factors = None
-            except Exception:
+            except Exception:  # pylint: disable=W0718
                 correction_factors = None
 
             try:
@@ -81,29 +84,29 @@ class H5(MatrixFile, object):
                     distance_counts = f.root.correction_factors.read()
                 else:
                     distance_counts = None
-            except Exception:
+            except Exception:  # pylint: disable=W0718
                 distance_counts = None
             return matrix, cut_intervals, nan_bins, distance_counts, correction_factors
 
-    def save(self, filename, pSymmetric=True, pApplyCorrection=None):
+    def save(self, pFileName, pSymmetric=True, pApplyCorrection=None):
         """
         Saves a matrix using hdf5 format
-        :param filename:
+        :param pFileName:
         :return: None
         """
         log.debug('Save in h5 format')
 
         # self.restoreMaskedBins()
-        if not filename.endswith(".h5"):
-            filename += ".h5"
+        if not pFileName.endswith(".h5"):
+            pFileName += ".h5"
 
         # if the file name already exists
         # try to find a new suitable name
-        if os.path.isfile(filename):
-            log.warning("*WARNING* File already exists {}\n "
-                        "Overwriting ...\n".format(filename))
+        if os.path.isfile(pFileName):
+            log.warning("*WARNING* File already exists %s\n "
+                        "Overwriting ...\n", pFileName)
 
-            unlink(filename)
+            unlink(pFileName)
         if self.nan_bins is None:
             self.nan_bins = np.array([])
         elif not isinstance(self.nan_bins, np.ndarray):
@@ -118,7 +121,7 @@ class H5(MatrixFile, object):
         matrix.eliminate_zeros()
 
         filters = tables.Filters(complevel=5, complib='blosc')
-        with tables.open_file(filename, mode="w", title="HiCExplorer matrix") as h5file:
+        with tables.open_file(pFileName, mode="w", title="HiCExplorer matrix") as h5file:
             matrix_group = h5file.create_group("/", "matrix", )
             # save the parts of the csr matrix
             for matrix_part in ('data', 'indices', 'indptr', 'shape'):
@@ -131,9 +134,9 @@ class H5(MatrixFile, object):
 
             # save the matrix intervals
             intervals_group = h5file.create_group("/", "intervals", )
-            chr_list, start_list, end_list, extra_list = zip(*self.cut_intervals)
+            chr_list, start_list, end_list, extra_list = zip(*self.cut_intervals)  # pylint: disable=W0612
             for interval_part in ('chr_list', 'start_list', 'end_list', 'extra_list'):
-                arr = np.array(eval(interval_part))
+                arr = np.array(eval(interval_part))  # pylint: disable=W0123
                 atom = tables.Atom.from_dtype(arr.dtype)
                 ds = h5file.create_carray(intervals_group, interval_part, atom,
                                           shape=arr.shape,

@@ -1,22 +1,20 @@
-import pytest
 import logging
 import os.path
 import sys
-from os import unlink
 import warnings
-from six import iteritems
 # from past.builtins import zip
 from collections import OrderedDict
-from intervaltree import IntervalTree, Interval
+from os import unlink
+from tempfile import NamedTemporaryFile
 
 import numpy as np
 import numpy.testing as nt
-from scipy.sparse import csr_matrix, dia_matrix
-from scipy.sparse import coo_matrix
-from tempfile import NamedTemporaryFile
+import pytest
+from intervaltree import Interval, IntervalTree
+from scipy.sparse import coo_matrix, csr_matrix
+from six import iteritems
 
 from hicmatrix import HiCMatrix as hm
-from hicmatrix.lib import MatrixFileHandler
 
 log = logging.getLogger(__name__)
 
@@ -28,7 +26,7 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_data/")
 def test_load_h5_save_and_load_cool():
     hic = hm.hiCMatrix(ROOT + 'Li_et_al_2015.h5')
 
-    outfile = NamedTemporaryFile(suffix='.cool', prefix='hicexplorer_test')
+    outfile = NamedTemporaryFile(suffix='.cool', prefix='hicexplorer_test')  # pylint: disable=R1732
     hic.matrixFileHandler = None
     hic.save(pMatrixName=outfile.name)
 
@@ -61,7 +59,7 @@ def test_load_h5_load_cool_weight():
 def test_load_h5_save_and_load_cool_2():
     hic = hm.hiCMatrix(ROOT + 'small_test_matrix.h5')
 
-    outfile = NamedTemporaryFile(suffix='.cool', prefix='hicexplorer_test')
+    outfile = NamedTemporaryFile(suffix='.cool', prefix='hicexplorer_test')  # pylint: disable=R1732
     hic.matrixFileHandler = None
     hic.save(pMatrixName=outfile.name)
 
@@ -79,7 +77,7 @@ def test_load_h5_save_and_load_cool_2():
 def test_load_cool_save_and_load_h5():
     hic = hm.hiCMatrix(ROOT + 'Li_et_al_2015.cool')
 
-    outfile = NamedTemporaryFile(suffix='.h5', prefix='hicexplorer_test')
+    outfile = NamedTemporaryFile(suffix='.h5', prefix='hicexplorer_test')  # pylint: disable=R1732
     hic.matrixFileHandler = None
     hic.save(pMatrixName=outfile.name)
 
@@ -159,7 +157,7 @@ def test_save_load_h5():
 
 
 @pytest.mark.xfail
-def test_save_load_other_formats_fail(capsys):
+def test_save_load_other_formats_fail():
     pMatrixFile = ROOT + 'test_matrix.hicpro'
     # pBedFileHicPro = ROOT + 'test_matrix.bed'  # no parameter for this in hiCMatrix::__init__() anyway
     # hic_matrix = hm.hiCMatrix(pMatrixFile=pMatrixFile)
@@ -177,8 +175,8 @@ def test_convert_to_zscore_matrix():
     # add a number of zeros
     mat[mat < 90] = 0
     # import ipdb;ipdb.set_trace()
-    mu = dict([(idx, mat.diagonal(idx).mean()) for idx in range(mat.shape[0])])
-    std = dict([(idx, np.std(mat.diagonal(idx)))
+    mu = dict([(idx, mat.diagonal(idx).mean()) for idx in range(mat.shape[0])])  # pylint: disable=R1717
+    std = dict([(idx, np.std(mat.diagonal(idx)))  # pylint: disable=R1717
                 for idx in range(mat.shape[0])])
 
     # compute z-score for test matrix
@@ -216,7 +214,7 @@ def test_convert_to_zscore_matrix_2():
 
     m_size = mat.shape[0]
     # compute matrix values per distance
-    chrom, start, end, extra = list(zip(
+    _, start, _, _ = list(zip(
         *hm.hiCMatrix.fit_cut_intervals(hic.cut_intervals)))
     dist_values = {}
     sys.stderr.write("Computing values per distance for each matrix entry\n")
@@ -303,10 +301,10 @@ def test_save():
     see also single test for these formats (marked as xfail)
     """
 
-    outfile_cool = NamedTemporaryFile(suffix='.cool', delete=False)
+    outfile_cool = NamedTemporaryFile(suffix='.cool', delete=False)  # pylint: disable=R1732
     outfile_cool.close()
 
-    outfile_h5 = NamedTemporaryFile(suffix='.h5', delete=False)
+    outfile_h5 = NamedTemporaryFile(suffix='.h5', delete=False)  # pylint: disable=R1732
     outfile_h5.close()
 
     hic = hm.hiCMatrix()
@@ -390,7 +388,6 @@ def test_filterOutInterChrCounts():
 
     nt.assert_equal(hic.getMatrix(), filtered_matrix)
 
-    row, col = np.triu_indices(5)
     cut_intervals = [('a', 0, 10, 1), ('a', 10, 20, 1),
                      ('a', 20, 30, 1), ('b', 30, 40, 1), ('b', 40, 50, 1)]
     hic = hm.hiCMatrix()
@@ -680,7 +677,7 @@ def test_maskBins():
     nt.assert_equal(sorted(hic.orig_bin_ids), sorted([0, 1, 2, 3, 4]))
 
 
-def test_update_matrix(capsys):
+def test_update_matrix():
     hic = hm.hiCMatrix()
     cut_intervals = [('a', 0, 10, 1), ('a', 10, 20, 1),
                      ('a', 20, 30, 1), ('b', 30, 40, 1), ('b', 40, 50, 1)]
@@ -770,7 +767,6 @@ def test_restoreMaskedBins():
     nt.assert_equal(hic.getMatrix(), result_matrix)
     nt.assert_equal(hic.orig_bin_ids, [])
 
-    row, col = np.triu_indices(5)
     cut_intervals = [('a', 0, 10, 1), ('a', 10, 20, 1),
                      ('a', 20, 30, 1), ('a', 30, 40, 1), ('b', 40, 50, 1)]
     hic = hm.hiCMatrix()
@@ -1110,7 +1106,6 @@ def test_getDistList():
 
 
 def test_convert_to_obs_exp_matrix():
-    row, col = np.triu_indices(5)
     cut_intervals = [('a', 0, 10, 1), ('a', 10, 20, 1),
                      ('a', 20, 30, 1), ('a', 30, 40, 1), ('b', 40, 50, 1)]
     hic = hm.hiCMatrix()
