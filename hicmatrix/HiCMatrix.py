@@ -1,24 +1,25 @@
+import logging
 import sys
 import warnings
 from collections import OrderedDict
-import logging
+
 log = logging.getLogger(__name__)
 
 
-import numpy as np
-from scipy.sparse import csr_matrix, dia_matrix, triu, tril
-from scipy.sparse import vstack as sparse_vstack
-from scipy.sparse import hstack as sparse_hstack
-import tables
-from intervaltree import IntervalTree, Interval
-import cooler
 import time
 from collections import Counter
 
-from .utilities import toBytes
-from .utilities import toString
-from .utilities import check_chrom_str_bytes
+import cooler
+import numpy as np
+import tables
+from intervaltree import Interval, IntervalTree
+from scipy.sparse import csr_matrix, dia_matrix
+from scipy.sparse import hstack as sparse_hstack
+from scipy.sparse import tril, triu
+from scipy.sparse import vstack as sparse_vstack
+
 from .lib import MatrixFileHandler
+from .utilities import check_chrom_str_bytes, toBytes, toString
 
 
 class hiCMatrix:

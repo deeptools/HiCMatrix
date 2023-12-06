@@ -1,4 +1,5 @@
 import logging
+
 log = logging.getLogger(__name__)
 from scipy.sparse import triu
 

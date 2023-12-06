@@ -1,13 +1,15 @@
-from os import unlink
-import os
 import logging
+import os
+from os import unlink
+
 log = logging.getLogger(__name__)
 
+import numpy as np
 import tables
 from scipy.sparse import csr_matrix, triu
-import numpy as np
 
 from hicmatrix.utilities import toString
+
 from .matrixFile import MatrixFile
 
 

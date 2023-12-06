@@ -1,11 +1,14 @@
 import logging
+
 log = logging.getLogger(__name__)
 
 import gzip
+
 from scipy.sparse import csr_matrix
 
-from .matrixFile import MatrixFile
 from hicmatrix.utilities import opener
+
+from .matrixFile import MatrixFile
 
 
 class Homer(MatrixFile, object):

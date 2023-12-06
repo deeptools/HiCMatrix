@@ -1,6 +1,7 @@
-import numpy as np
-import sys
 import gzip
+import sys
+
+import numpy as np
 
 
 def toString(s):

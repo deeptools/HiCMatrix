@@ -1,19 +1,18 @@
-import pytest
 import logging
 import os.path
 import sys
-from os import unlink
 import warnings
-from six import iteritems
 # from past.builtins import zip
 from collections import OrderedDict
-from intervaltree import IntervalTree, Interval
+from os import unlink
+from tempfile import NamedTemporaryFile
 
 import numpy as np
 import numpy.testing as nt
-from scipy.sparse import csr_matrix, dia_matrix
-from scipy.sparse import coo_matrix
-from tempfile import NamedTemporaryFile
+import pytest
+from intervaltree import Interval, IntervalTree
+from scipy.sparse import coo_matrix, csr_matrix, dia_matrix
+from six import iteritems
 
 from hicmatrix import HiCMatrix as hm
 from hicmatrix.lib import MatrixFileHandler

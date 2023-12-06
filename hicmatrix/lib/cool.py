@@ -1,23 +1,22 @@
-import os
 import logging
+import os
+
 log = logging.getLogger(__name__)
-from datetime import datetime
-from copy import deepcopy
-
-from importlib.metadata import version
-
+import gc
 import math
 import time
-import gc
+from copy import deepcopy
+from datetime import datetime
+from importlib.metadata import version
 
 import cooler
 import h5py
 import numpy as np
-from scipy.sparse import triu, csr_matrix, lil_matrix, dok_matrix
 import pandas as pd
+from scipy.sparse import csr_matrix, dok_matrix, lil_matrix, triu
 
-from hicmatrix.utilities import toString, toBytes
-from hicmatrix.utilities import convertNansToOnes, convertNansToZeros
+from hicmatrix.utilities import (convertNansToOnes, convertNansToZeros,
+                                 toBytes, toString)
 
 from .matrixFile import MatrixFile
 

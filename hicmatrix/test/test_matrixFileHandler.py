@@ -1,13 +1,16 @@
-from hicmatrix.lib import MatrixFileHandler
-import numpy.testing as nt
+import logging
 import os
-import pytest
-from scipy.sparse.csr import csr_matrix
-import numpy as np
 from copy import deepcopy
 from tempfile import NamedTemporaryFile
+
 import cooler
-import logging
+import numpy as np
+import numpy.testing as nt
+import pytest
+from scipy.sparse.csr import csr_matrix
+
+from hicmatrix.lib import MatrixFileHandler
+
 log = logging.getLogger(__name__)
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_data/")
