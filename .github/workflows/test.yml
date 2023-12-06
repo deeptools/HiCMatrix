@@ -26,12 +26,12 @@ jobs:
         environment-name: HiCMatrix_env_ci
     - name: pip install
       run: |
-        micromamba activate HiCMatrix_env_ci
         python3 -m pip install .
+      shell: micromamba-shell {0}
     - name: Test HiCMatrix
       run: |
-        micromamba activate HiCMatrix_env_ci
         py.test hicmatrix/test/ --capture=sys
+      shell: micromamba-shell {0}
   test-osx:
     name: Test on OSX
     runs-on: macOS-latest
@@ -44,9 +44,9 @@ jobs:
         environment-name: HiCMatrix_env_ci
     - name: pip install
       run: |
-        micromamba activate HiCMatrix_env_ci
         python3 -m pip install .
+      shell: micromamba-shell {0}
     - name: Test HiCMatrix
       run: |
-        micromamba activate HiCMatrix_env_ci
         py.test hicmatrix/test/ --capture=sys
+      shell: micromamba-shell {0}
