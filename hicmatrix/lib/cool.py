@@ -4,6 +4,8 @@ log = logging.getLogger(__name__)
 from datetime import datetime
 from copy import deepcopy
 
+from importlib.metadata import version
+
 import math
 import time
 import gc
@@ -16,7 +18,6 @@ import pandas as pd
 
 from hicmatrix.utilities import toString, toBytes
 from hicmatrix.utilities import convertNansToOnes, convertNansToZeros
-from hicmatrix._version import __version__
 
 from .matrixFile import MatrixFile
 
@@ -387,8 +388,8 @@ class Cool(MatrixFile, object):
 
         info['format'] = str('HDF5::Cooler')
         info['format-url'] = str('https://github.com/mirnylab/cooler')
-        info['generated-by'] = str('HiCMatrix-' + __version__)
-        info['generated-by-cooler-lib'] = str('cooler-' + cooler.__version__)
+        info['generated-by'] = str('HiCMatrix-' + version('HiCMatrix'))
+        info['generated-by-cooler-lib'] = str('cooler-' + version('cooler'))
 
         info['tool-url'] = str('https://github.com/deeptools/HiCMatrix')
 

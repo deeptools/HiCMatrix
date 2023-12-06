@@ -16,7 +16,6 @@ import pandas as pd
 
 from hicmatrix.utilities import toString, toBytes
 from hicmatrix.utilities import convertNansToOnes, convertNansToZeros
-from hicmatrix._version import __version__
 
 from .matrixFile import MatrixFile
 

@@ -707,7 +707,7 @@ class hiCMatrix:
         by the given matrix values. The
         shapes have to coincide
         """
-        assert self.matrix.shape == newMatrix.shape,\
+        assert self.matrix.shape == newMatrix.shape, \
             "Given matrix has different shape. New " \
             "values need to have the same shape as previous matrix."
 
