@@ -10,7 +10,7 @@ authors = [
 ]
 description = "Helper package which implements HiCMatrix class for HiCExplorer, pyGenomeTracks and scHiCExplorer."
 readme = "README.rst"
-requires-python = ">=3.8"
+requires-python = ">=3.7"
 classifiers = [
     'Intended Audience :: Science/Research',
     'Topic :: Scientific/Engineering :: Bio-Informatics',
