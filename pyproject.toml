@@ -21,7 +21,8 @@ dependencies = [
     "tables >= 3.5",
     "pandas >= 0.25",
     "cooler >= 0.8.9",
-    "intervaltree >= 3.0"
+    "intervaltree >= 3.0",
+    "importlib_metadata; python_version<'3.8'"
 ]
 
 [project.urls]

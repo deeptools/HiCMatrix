@@ -2,7 +2,10 @@ import logging
 import os
 
 import gc
-from importlib.metadata import version
+try:
+    from importlib.metadata import version
+except ImportError:
+    from importlib_metadata import version
 
 import cooler
 import h5py
