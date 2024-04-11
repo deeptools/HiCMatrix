@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "HiCMatrix"
-version = "17.1"
+version = "17.2"
 authors = [
   { name = "Lucille Lopez-Delisle, Joachim Wolff, Leily Rabbani, Vivek Bhardwaj, Fidel Ramirez", email = "lucille.delisle@epfl.ch" },
 ]
