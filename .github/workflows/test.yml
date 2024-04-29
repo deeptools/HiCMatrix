@@ -49,7 +49,7 @@ jobs:
     - uses: mamba-org/setup-micromamba@main
       with:
         environment-file: ./HiCMatrix_env_ci.yml
-        cache-downloads: true
+        cache-downloads: false
         environment-name: HiCMatrix_env_ci
     - name: pip install
       run: |
