@@ -35,7 +35,7 @@ jobs:
       shell: micromamba-shell {0}
   test-osx:
     name: Test on OSX
-    runs-on: macOS-latest
+    runs-on: macos-12 # which is Intel and supported by bioconda macOS-latest is Apple silicon.
     strategy:
       matrix:
         python-version:
